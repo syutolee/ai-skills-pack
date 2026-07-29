@@ -15,28 +15,22 @@ Skill boundaries follow the **top-down dependency chain of marketing knowledge**
         │     whether these numbers can be trusted      │
         └─────────────────────────────────────────────┘
 
-  2. usp-discovery (value proposition mining)      〔not included〕
-                  ↓
-  3. campaign-strategy (angle / strategy design)   〔not included〕
-                  ↓
-     ── quick-angle (fast positioning) 〔included — the lightweight version of this layer〕
-        no research, no validation — just organizes your answers to three
-        questions into a positioning doc the downstream skills can read
+  2. quick-angle (fast positioning)
+     no research, no validation — just organizes your answers to three
+     questions into a positioning doc the downstream skills can read
                   ↓
    ┌──────────────┼──────────────┐
    ↓              ↓              ↓
- 4a. ad-creative  4b. landing-   4c. ads
+ 3a. ad-creative  3b. landing-   3c. ads
    (ad creative)   page-cro       (campaign setup)
                   (landing page
                    CRO)
    └──────────────┼──────────────┘
                   ↓
-  5. campaign-analysis-iteration (performance analysis & iteration calls)
-                  ↓
-  6. strategy-recalibration (strategy recalibration)   〔not included〕
-     judges whether the angle/USP assumption itself still holds,
-     decides whether to loop back to layer 2/3 — not "tweak the creative again"
+  4. campaign-analysis-iteration (performance analysis & iteration calls)
 ```
+
+For each layer's boundaries, how they hand off, and exactly what degrades when no positioning doc is present, see [`ROADMAP.md`](ROADMAP.md).
 
 ## The six skills in this pack
 
@@ -44,25 +38,23 @@ Skill boundaries follow the **top-down dependency chain of marketing knowledge**
 |---|---|---|
 | **tracking-health** | Setting up, auditing, and debugging tracking & measurement; PII-leak protection; attribution limits | — |
 | **quick-angle** | Asks three questions (who you're targeting, why you win, who you're compared against), writes a 10-20 line positioning doc for downstream skills | Market research, validating whether the claims hold up, producing multiple candidate angles |
-| **ads** | Platform selection, account structure, budget allocation, audience setup, Taiwan ad-compliance checks | Performance judgment (→ 5), creative production (→ 4a), account execution (does not execute) |
-| **ad-creative** | Defining angles, copywriting, static concept generation, creative capacity planning | Performance analysis and win/lose judgment (→ 5) |
+| **ads** | Platform selection, account structure, budget allocation, audience setup, Taiwan ad-compliance checks | Performance judgment (→ 4), creative production (→ 3a), account execution (does not execute) |
+| **ad-creative** | Defining angles, copywriting, static concept generation, creative capacity planning | Performance analysis and win/lose judgment (→ 4) |
 | **landing-page-cro** | Diagnoses landing pages with the LIFT six-factor model; message-match check | Statistical significance testing (→ ab-testing, not included) |
 | **campaign-analysis-iteration** | Deciding whether to continue from data — kill/keep/scale, whether to swap creative | Producing creative, changing settings, operating accounts |
 
 **Every skill follows the "lightweight routing entry point (`SKILL.md`) + topical `references/`" progressive-disclosure structure**: `SKILL.md` only holds the role definition, scope boundaries, hard rules, and a routing table; the actual thresholds, checklists, and templates live in `references/` and load on demand.
 
-## Three modules not included in this pack (planned)
+## Works without a positioning doc
 
-`usp-discovery`, `campaign-strategy`, and `strategy-recalibration` are **not provided this time** — this pack only reserves their place and explains what they'd do. They sit at the strategy layer of the dependency chain; content and pricing plans are in [`ROADMAP.md`](ROADMAP.md).
-
-**The six skills in this pack work fully standalone without them.** The three tactical skills (`ads` / `ad-creative` / `landing-page-cro`) each check, before starting, whether the project has a positioning / value-proposition document:
+The three tactical skills (`ads` / `ad-creative` / `landing-page-cro`) each check, before starting, whether the project has a positioning / value-proposition document:
 
 - **Found** → reads it first and uses it as the baseline
 - **Not found** → **still proceeds**, but explicitly discloses "this is a generic execution recommendation with no strategic basis," and explains which layer of judgment is missing
 
 This is a **soft nudge, not a hard gate**. No skill refuses to work just because you don't have a positioning doc, but none of them will pretend you do either.
 
-When you don't have a positioning doc handy, `quick-angle` (included in this pack) asks three questions and writes the answers into `.agents/positioning.md`, which the three tactical skills above can then read. It does no market research and doesn't validate whether the answers hold up; its scope differs from `usp-discovery` / `campaign-strategy` — see [`ROADMAP.md`](ROADMAP.md) for details.
+When you don't have a positioning doc handy, `quick-angle` (included in this pack) asks three questions and writes the answers into `.agents/positioning.md`, which the three tactical skills above can then read. It does no market research and doesn't validate whether the answers hold up — it only turns your answers into a file the downstream skills can read, and the file it writes says so explicitly.
 
 ## Installation
 
