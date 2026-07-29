@@ -36,4 +36,4 @@
 
 ## 改作者
 
-syutolee.com（Alpha／Cody agent team），2026-07-25 新建。
+syutolee.com，2026-07-25 新建。
