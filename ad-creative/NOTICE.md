@@ -48,8 +48,6 @@
 | `references/generative-tools.md`（圖片／影片／語音生成工具完整指南與成本比較） | **未提供**——`references/copy-and-visual-production.md` 只保留工具名稱清單與「工具無地區限制、差異在 prompt 的在地視覺脈絡」的原則 |
 | 原版平台規格涵蓋的 **LinkedIn 與 X 版位規格** | **未提供**——台灣付費投放量集中在 Google／Meta／LINE／TikTok，且這兩個平台的規格沒有台灣在地化施力點（照抄等於翻譯，違反本包「非單純翻譯」的原則）。需要時請查各平台官方廣告規格頁 |
 
-完整的逐輪修訂歷史記錄在專案治理檔 `02-worklog.md`（不隨技能包公開發布，此 NOTICE 只保留公開摘要）。
-
 ## 改作者
 
-syutolee.com（Alpha／Cody agent team），2026-07-20 起多輪修訂，2026-07-21 定版，2026-07-25 修訂（技能邊界重畫：成效分析移至 campaign-analysis-iteration，素材最佳實務自 ads 移入）。
+syutolee.com，2026-07-20 起多輪修訂，2026-07-21 定版，2026-07-25 修訂（技能邊界重畫：成效分析移至 campaign-analysis-iteration，素材最佳實務自 ads 移入）。
