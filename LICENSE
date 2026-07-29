@@ -1,0 +1,59 @@
+MIT License
+
+Copyright (c) 2025 Corey Haines
+Copyright (c) 2026 syutolee.com
+
+（第一項為上游專案 coreyhaines31/marketingskills 的原始版權聲明，依 MIT 授權條款隨改作
+一併保留；第二項涵蓋本包中由 syutolee.com 撰寫的部分——包含四支技能的在地化改作內容、
+quick-angle 的全部內容、landing-page-cro 中**除「標題鏡射」一節以外**的原創內容
+（該節改作自上游 ads/SKILL.md，著作權歸 Corey Haines 並依 MIT 授權改作）、所有
+references/ 參考檔中新增或重寫的段落，以及 README.md、ROADMAP.md、各 NOTICE.md。
+這些貢獻同樣以下述 MIT 授權條款釋出。逐技能的來源與改作性質見下方分類與各技能的
+NOTICE.md。）
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+本目錄（bizdev/ai-skills-pack/）內的六份技能及其參考檔，授權狀態分兩類：
+
+【深度在地化改作（以上述 MIT 授權的 coreyhaines31/marketingskills 專案為基礎，原作者 Corey Haines；
+  在地化改作與新增內容的著作權歸 syutolee.com，同樣以 MIT 授權釋出）】
+  - tracking-health（改名自原版 analytics）
+  - ads（收窄為投放執行機制）
+  - ad-creative（收窄為素材產出本體）
+  - campaign-analysis-iteration（合併自原版 ads 的 kill/keep/scale 邏輯與 ad-creative 的成效迭代模式）
+依 MIT 授權條款，上述原始版權聲明與授權聲明隨改作一併保留於本檔案。
+
+【本包新建（原創為主，著作權歸 syutolee.com；landing-page-cro 另含一段改作，見下）】
+  - landing-page-cro（**除「標題鏡射」一節外**為原創）
+    上述 marketingskills 專案在本包鎖定的版本並未包含 cro 技能，本技能的其餘內容為本包
+    原創撰寫，同樣以 MIT 授權釋出。**其中「標題鏡射」一節改作自原版 ads/SKILL.md，
+    著作權歸 Corey Haines，屬上一類的 MIT 改作範圍，不在「非改作」之列**；
+    診斷骨架使用 WiderFunnel（Chris Goward）公開發表的 LIFT 模型之概念結構，
+    未複製其文字內容，框架著作權歸原作者所有。詳見 landing-page-cro/NOTICE.md。
+  - quick-angle（全部原創，非改作）
+    本包原創撰寫，未複製或改寫 marketingskills 任何檔案的文字，同樣以 MIT 授權釋出。
+    上游有一支功能相鄰的 product-marketing 技能（產出 .agents/product-marketing.md），
+    兩者產出的檔案與涵蓋範圍不同，差異說明詳見 quick-angle/NOTICE.md。
+
+每個技能子目錄下的 NOTICE.md 記錄該技能的確切來源檔案、鎖定的原始碼版本（commit SHA）、
+擷取日期與內容雜湊（SHA-256），以及改作性質說明。
+
+包根目錄的 README.md 說明技能邊界與安裝方式，ROADMAP.md 說明未隨本包提供的三個規劃中模組。
