@@ -35,4 +35,4 @@ LIFT 是通用骨架，台灣訪客實際卡住的地方跟歐美不一樣。以
 
 ## 改作者
 
-syutolee.com（Alpha／Cody agent team），2026-07-25 新建。
+syutolee.com，2026-07-25 新建。
