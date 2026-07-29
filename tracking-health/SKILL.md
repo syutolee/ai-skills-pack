@@ -77,8 +77,5 @@ metadata:
 - **campaign-analysis-iteration**：觸發關閉門檻／留／放大與素材贏輸判斷；判斷的前提是這裡的數據可信
 - **ad-creative**、**landing-page-cro**：迭代與優化都要看這裡設定的成效數據
 
-**未隨本包提供（規劃中的付費模組，見包根目錄 `ROADMAP.md`）：**
-- **usp-discovery**、**campaign-strategy**、**strategy-recalibration**
-
 **未隨本包提供（第三方技能，你的 agent 環境需另外安裝）：**
 - **ab-testing**：實驗設計與量測
