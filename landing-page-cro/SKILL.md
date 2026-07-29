@@ -102,23 +102,63 @@ metadata:
 
 **三個環節各做一次：**
 
-1. **抓取前**：先 URL-decode（必要時多解一層，`%2540` → `%40` → `@`），偵測敏感內容。**host、query、path、fragment 四處跑同一套掃描**，只清 query 是最常見的漏洞，只清 query＋path＋fragment 是第二常見的——`order-A12345.example.com`、`wang-xiaoming.example.com` 這種把值塞進子網域的寫法，過去整套規則完全沒看。**命中敏感內容時，帶著原值的網址不得傳進任何工具呼叫**——瀏覽器工具、抓取工具、搜尋工具都算，工具呼叫的參數會進對話紀錄、代理層與服務端日誌，等到報告階段才移除已經來不及。兩條路：
+1. **抓取前**：先 URL-decode（必要時多解一層，`%2540` → `%40` → `@`），偵測敏感內容。**host、query、path、fragment 四處都要掃，但判準各自不同**（見下方「要偵測什麼」）——只清 query 是最常見的漏洞，只清 query＋path＋fragment 是第二常見的，`order-A12345.example.com`、`wang-xiaoming.example.com` 這種把值塞進子網域的寫法過去整套規則完全沒看。**命中敏感內容時，帶著原值的網址不得傳進任何工具呼叫**——瀏覽器工具、抓取工具、搜尋工具都算，工具呼叫的參數會進對話紀錄、代理層與服務端日誌，等到報告階段才移除已經來不及。兩條路：
    - **那些參數不是存取頁面所必需**（`?email=`、`utm_*` 裡夾帶的個資、追蹤參數）→ **改用清理後的網址去抓**，抓成功就繼續診斷
    - **那個 token 就是進入頁面的鑰匙**（一次性連結、重設密碼頁、帶簽章的預覽網址）→ **拒絕遠端抓取**，請使用者把頁面內容貼上來。說法：「這個網址帶著存取權杖，我把它送進抓取工具就等於把權杖留在日誌裡。請直接把頁面文字與版面描述貼給我。」**不要為了『反正只是抓一次』而破例**
 2. **記錄時**：對話中複述網址、寫進中間筆記時，一律用遮罩後的版本
 3. **寫進報告時**：報告只放**清理後的 canonical URL**（`https://example.com/checkout/confirm`），敏感參數整個拿掉不是只遮值
 
-**要偵測什麼——下面這四類，在 host、query、path、fragment 四個位置一視同仁**（fragment 裡的 `#state=order-A12345`、子網域裡的 `order-A12345.example.com`、路徑裡的 `/orders/A12345`，是同一個值換三個位置，不是三件不同的事）：
+**要偵測什麼——四個位置都要掃，但可用的線索不一樣。** 同一個值換三個位置（fragment 的 `#state=order-A12345`、子網域的 `order-A12345.example.com`、路徑的 `/orders/A12345`）確實是同一件事要一起處理，但 query 有「參數名稱」這個明確的 key 可以比對，path 片段與 host 標籤沒有——它們只有值本身。
 
-- **參數名稱命中**：`email`／`mail`／`phone`／`tel`／`mobile`／`name`／`id_no`／`token`／`otp`／`code`／`session`／`sid`／`auth`／`key`／`secret`／`signature`／`sig`／`order`／`order_id`／`orderno`／`invoice`／`inv`／`receipt`／`customer`／`cust_id`／`member`／`ref`／`refno`／`tracking`／`address`（含大小寫與底線／連字號變體）。**同一份清單也用來比對 path 片段與子網域標籤**（`/order/…`、`order-….example.com`）
-- **值的形狀命中（參數名稱看起來無害時照樣要查）**：
-  - 解碼後含 `@` 且像 email
-  - 像台灣手機號（`09` 開頭 10 碼，含 `-` 或空格分隔的變體）
-  - 像身分證字號（一個英文字母＋9 位數字）
-  - **像訂單／發票／客戶參考碼**：①字母數字混合、長度 5-20、含至少 2 位連續數字（`A12345`、`SO-2026-0731`、`INV20260729001`）②純數字且長度 ≥6（`20260729001`）③台灣統一發票號碼形狀（2 個英文字母＋8 位數字，`AB12345678`）
-  - 長度異常的不透明字串（可能是 token）
-- **路徑與子網域裡的裸值**：`/orders/A12345`、`/user/王小明`、`/reset/abc123def`、`order-A12345.example.com` → 報告寫成 `/orders/:id`、`:sub.example.com`
-- **fragment**：`#token=…`、`#state=order-A12345` 一律整段拿掉（SPA 用 fragment 傳狀態很常見，「fragment 不會送到伺服器」不是留著它的理由——報告會被轉寄）
+**這裡最容易做錯的一件事**：把下面那份敏感**參數名稱**清單直接拿去比對 path 片段與子網域標籤。那會把 `customer.example.com`、`/order`、`/member` 這些再正常不過的公開頁面網址判成含個資，攔掉根本沒有個資的網址、或把好端端的路徑遮成 `/:id`，健檢報告因此少掉一份該有的資料。**參數名稱清單只給 query 的 key 用；path 與 host 本身不會單獨靠關鍵字判命中，看的是值的形狀——但 path 規則 3 會把清單字當成「前一片段」的上下文佐證，跟後面的數字形狀合併判斷，那是複合判準，不是關鍵字判準本身。**
+
+**共用：值的形狀（三個位置都用這一套）**
+
+- 解碼後含 `@` 且像 email
+- 像台灣手機號（`09` 開頭 10 碼，含 `-` 或空格分隔的變體）
+- 像身分證字號（一個英文字母＋9 位數字）
+- **整段就是一個人名**（`/user/王小明`、`wang-xiaoming.example.com`）。**人名嵌在可讀的標題或功能字詞裡不算**——`/blog/john-smith-interview` 是公開文章網址，判準是「這一段除了人名之外還有沒有別的語意成分」，有就不算
+- **像訂單／發票／客戶參考碼**：①字母數字混合、長度 5-20、含至少 2 位連續數字（`A12345`、`SO-2026-0731`、`INV20260729001`）②純數字且長度 ≥6（`20260729001`、`8829371`）③台灣統一發票號碼形狀（2 個英文字母＋8 位數字，`AB12345678`）
+- 長度異常的不透明字串（可能是 token）
+
+**query：參數名稱命中或值的形狀命中，任一成立就算**
+
+- **參數名稱命中**：`email`／`mail`／`phone`／`tel`／`mobile`／`name`／`id_no`／`token`／`otp`／`code`／`session`／`sid`／`auth`／`key`／`secret`／`signature`／`sig`／`order`／`order_id`／`orderno`／`invoice`／`inv`／`receipt`／`customer`／`cust_id`／`member`／`ref`／`refno`／`tracking`／`address`（含大小寫與底線／連字號變體）。**名稱命中就成立，值多短都不影響**——`?cust_id=42` 照樣命中
+- **值的形狀命中**：參數名稱看起來無害時（`?x=`、`?q=`），值照樣要跑上面那套形狀比對
+
+**path：只看片段本身的形狀，關鍵字自己不構成命中**
+
+單一片段命中下列任一項才算命中：
+
+1. **片段本身命中值的形狀**——`/orders/A12345` 的 `A12345`、`/reset/abc123def`、`/user/王小明` 的 `王小明`
+2. **片段內含 `key=value`／`key:value` 結構**，且 key 命中參數名稱清單、value 命中值的形狀——例如 `/p/token=8f3a9c2e`
+3. **前一個片段是參數名稱清單裡的字**（`order`／`member`／`customer`…）**而這一個片段是純數字**——`/order/42` 這種短到形狀抓不到、但上下文已經講明它是什麼的寫法
+
+**只有關鍵字、後面沒有識別值的片段一律放行**：`/order`、`/orders`、`/member`、`/customer/pricing`、`/about/team` 都是正常的公開頁面路徑，不攔也不遮。關鍵字在 path 裡只有第 3 項那一種用法（當作相鄰值的上下文訊號）。
+
+**host：逐標籤看形狀，功能字詞不算命中**
+
+單一標籤（用 `.` 切開、標籤內的 `-` 去掉後）命中值的形狀才算命中——`order-A12345.example.com` 的 `A12345`、`wang-xiaoming.example.com` 的人名。**`xn--` 開頭的 punycode 標籤要先展開成原文再比對**（`xn--dkw4bz30d` 展開是 `王小明`，不展開一條都不會命中）；展開失敗就走拒抓。
+
+**常見的功能子網域字詞本身不算命中**：`www`／`shop`／`store`／`app`／`api`／`blog`／`help`／`support`／`docs`／`customer`／`member`／`account`／`order`／`orders`／`user`／`m`／`tw`／`en`。`customer.example.com`、`member.example.com`、`orders.example.com` 都是正常的公開站台，照抓照寫。
+
+**fragment：不必判斷，一律整段拿掉**
+
+`#token=…`、`#state=order-A12345` 整段移除（SPA 用 fragment 傳狀態很常見，「fragment 不會送到伺服器」不是留著它的理由——報告會被轉寄）。
+
+**行為對照（照這張表核對自己的判定）**
+
+| 網址 | 判定 |
+|---|---|
+| `https://customer.example.com/pricing`、`https://member.example.com/` | **放行**——`customer`／`member` 是功能子網域字詞，標籤本身沒有任何識別值形狀 |
+| `https://example.com/order`、`/orders`、`/member` | **放行**——關鍵字自己不構成命中，後面沒有識別值就沒有東西可洩漏 |
+| `https://example.com/customer/pricing` | **放行**——`customer` 是關鍵字，但下一片段 `pricing` 不是純數字也不命中形狀，第 3 項上下文規則不成立 |
+| `https://example.com/order/A12345`、`https://example.com/orders/8829371` | **命中**——`A12345` 是字母數字混合含連續數字、`8829371` 是 ≥6 位純數字。報告寫成 `/orders/:id` |
+| `https://example.com/order/42` | **命中**——`42` 太短、形狀抓不到，但前一片段 `order` 在清單裡且這一片段是純數字，第 3 項成立。報告寫成 `/order/:id` |
+| `https://order-A12345.example.com/`、`https://wang-xiaoming.example.com/` | **命中**——標籤去掉 `-` 後是識別碼形狀／人名。報告寫成 `:sub.example.com` |
+| `https://example.com/p?cust_id=42` | **命中**——`cust_id` 是參數名稱命中，值只有兩位數字不影響判定 |
+| `https://example.com/p?x=0912-345-678` | **命中**——參數名 `x` 無害，但值去掉 `-` 之後是台灣手機形狀 |
+| `https://example.com/checkout#state=order-A12345` | **命中**——fragment 不判斷，整段拿掉 |
 
 **判不出來的時候，答案是拒抓，不是放行。** 一個 `?ref=A12345` 到底是公開的活動代號還是某人的訂單編號，從字串上看不出來——**這種時候不要自己猜**，問使用者一句「`ref=A12345` 這個值是公開的（例如活動代號、頻道代號）還是跟某一筆訂單／某一位客戶綁定的？」。使用者確認是公開識別碼之前，走「拒絕遠端抓取、請貼頁面內容」那條路。**fail-closed 的意思就是不確定時往嚴的那邊倒**，而不是「看起來沒那麼像個資就先抓抓看」。
 
@@ -127,7 +167,7 @@ metadata:
 **例外（範圍很窄，不是「診斷需要就可以留」）**：診斷確實需要用到參數（例如動態標題置換靠 `?v=b` 切換文案）時，可以保留該功能必要的那一個參數——**但這個例外只適用於通過上面兩層檢查的非敏感功能參數**：
 
 1. **參數名稱不在敏感清單裡**（`email`／`token`／`code`／`order_id`／`invoice`／`ref`／`sig`… 那一整串）
-2. **值的形狀也不命中**（不像 email、不像手機、不像身分證字號、不像訂單／發票／客戶參考碼、不是長度異常的不透明字串）
+2. **值的形狀也不命中**（不像 email、不像手機、不像身分證字號、不是人名、不像訂單／發票／客戶參考碼、不是長度異常的不透明字串）
 3. **這個值是使用者確認過的公開識別碼**，或它本身就顯而易見不綁任何人（`?v=b`、`?lang=zh-TW`、`?variant=2`）
 
 **三層都過才算非敏感功能參數**，其餘照樣拿掉，並在報告註明保留了哪一個、為什麼。
