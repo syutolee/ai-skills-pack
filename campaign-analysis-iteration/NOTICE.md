@@ -54,4 +54,4 @@
 
 ## 改作者
 
-syutolee.com（Alpha／Cody agent team），2026-07-25 新建（合併自原 `ads` 與 `ad-creative` 的成效判斷邏輯，該兩支技能的內容自 2026-07-20 起經多輪修訂）。
+syutolee.com，2026-07-25 新建（合併自原 `ads` 與 `ad-creative` 的成效判斷邏輯，該兩支技能的內容自 2026-07-20 起經多輪修訂）。
