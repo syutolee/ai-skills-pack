@@ -1,53 +1,54 @@
-# Google RSA 輸出規格
+# Google RSA output spec
 
-**這份檔案是規格，不是產出流程。** 本技能（`ads`）**不自己撰寫 RSA 的標題與說明**——文字資產的產出一律走 `ad-creative`，因為那裡才有 grounded input 分級、`source_id` 與授權欄位、切角文件的 schema 驗證與注入防護、以及合規 fail-closed 這幾道關卡。在 `ads` 裡直接寫標題等於繞過那整套。
+**This is a spec, not a production workflow.** `ads` does **not** write RSA headlines and descriptions itself — text-asset production runs through `ad-creative`, which carries grounded-input grading, `source_id`/license fields, positioning-document schema validation, and injection defense, plus compliance fail-closed. Writing headlines directly in `ads` bypasses that whole chain.
 
-**使用者在 `ads` 的脈絡下要求「幫我寫 RSA」時**：
+**When the user asks `ads` to "write the RSA"**:
 
-1. 說明分工——「RSA 的標題與說明由 `ad-creative` 產出，那裡會逐則要求證據來源；我這邊負責的是規格、廣告群組結構、否定關鍵字與合規檢查」
-2. 把**這份規格連同已知的廣告群組結構、關鍵字、合規產業別**交給 `ad-creative`，由它產出標題與說明
-3. `ad-creative` 產出後，回到 `ads` 做**規格與合規複核**（字元數、釘選、每廣告群組 3 組上限、醫療／保健／藥品的兩關檢查），這是本技能的職責
-4. 使用者的環境沒有安裝 `ad-creative` 時：據實說明「完整的 RSA 產出流程需要 `ad-creative`（本包已含）——沒有它，我可以給你規格、廣告群組結構、否定關鍵字與合規檢查清單，但不會直接寫標題文案，因為那需要逐則的證據來源把關」。**不要因為對方沒安裝就自己下海寫**
+1. State the division of labor — "`ad-creative` produces the headlines and descriptions, with a source requirement on every line; I handle the spec, ad group structure, negative keywords, and compliance review"
+2. Hand `ad-creative` this spec plus the known ad group structure, keywords, and regulated-industry flag
+3. Once `ad-creative` produces the assets, `ads` does the **spec and compliance review**: character count, pinning, the 3-per-ad-group cap, and the two-check medical/supplement pass — this skill's job
+4. `ad-creative` not installed → say so plainly: "the full RSA workflow needs `ad-creative` (shipped in this package) — without it I can give you the spec, ad group structure, negative keywords, and a compliance checklist, but I won't write headline copy myself, because that needs a per-line source chain." **Don't write copy yourself just because it's missing.**
 
-本技能自己產出的部分（廣告群組結構、否定關鍵字、附加連結、額外資訊、結構化摘要）照下方「證據分級」規則走。
+The parts `ads` produces itself (ad group structure, negative keywords, sitelinks, callouts, structured snippets) follow the evidence-grading rules below.
 
-在地化自原版 `rsa-output-spec.md`，來源見 `../NOTICE.md`。
+## Hard limits per RSA (check before replying)
 
-## 每組 RSA 的硬性限制（回覆前先檢查）
+**Separate what's a Google platform limit from what's this pack's own house rule** — `ad-creative`'s `references/platform-specs.md` states "up to 15 headlines, up to 4 descriptions," which is Google's platform ceiling (the platform actually only requires 3 headlines/2 descriptions minimum to create an RSA, not a full house every time); the "exactly 15/4" target below is **this pack's house rule** — the reasoning is that 15 headlines and 4 descriptions give Google's auto-combination testing enough angle coverage to be worth it. It's a quality bar this pack sets, not a technical ceiling Google enforces:
 
-**先分清楚哪些是 Google 平台本身的限制、哪些是本技能包自訂的 house rule**——`ad-creative` 技能的 `references/platform-specs.md` 寫「最多 15 個標題、最多 4 個說明」，這是 Google 平台允許的上限（平台實際只要求最少 3 個標題、2 個說明就能建立 RSA，不是每次都要填滿）；以下「剛好 15／4」則是**本技能包的 house rule**，理由是 15 個標題、4 個說明能讓 Google 的自動組合測試涵蓋更多角度組合，這是本技能對輸出品質的要求，不是 Google 平台會擋你交少一點的技術限制：
+- **Headlines:** target **15** when evidence supports it, each **≤30 characters** (including spaces/punctuation — see "Character counting," below). Format as `1. ...(NN chars)` so the user can verify. **"15" is a target, not a hard floor** — reduce per the evidence tiers below when support is thin; never pad to 15 with unsupported variants (a reworded duplicate counts as unsupported)
+- **Descriptions:** target **4** when evidence supports it, each **≤90 characters**. Same evidence-tier rule applies
 
-- **標題：** 資料充足時的目標值是每組 RSA **15 則**，每則 **≤30 字元**（含空格與標點，見下方「中文字元計數」）。以 `1. ...（NN 字元）` 格式呈現，方便使用者核對。**「15 則」是目標不是硬性下限**——證據不足時照「證據分級」規則減量，不得為了湊滿 15 而生出沒有依據的變體（同一句換個詞序湊數也算）
-- **說明：** 資料充足時的目標值是每組 RSA **4 則**，每則 **≤90 字元**。同樣適用證據分級規則
+**Floor for reduction: below 3 headlines/2 descriptions, don't output the RSA at all.** This is the platform's own minimum to create an RSA, not a house rule — handing the user a "RSA" with 2 headlines can't even be saved in the account, so it looks like a deliverable but isn't one.
 
-**減量的地板：低於 3 標題／2 說明時整組 RSA 不輸出。** 這是平台建立 RSA 的最低要求，不是本包的 house rule——交出 2 個標題的「RSA」，使用者拿到帳戶裡根本存不進去，等於交了一個不能用的東西還讓他以為有東西可用。
-
-| 手上有依據的則數 | 怎麼處理 |
+| Supported lines on hand | How to handle |
 |---|---|
-| 標題 3-14 則、說明 2-3 則 | **照實輸出並標缺口**——這是可交付的 RSA，能建立、能上線，只是組合涵蓋面比 15／4 窄。缺口說明照下方「所有資產類型共用的三件事」寫 |
-| 標題 <3 則 或 說明 <2 則（**任一個不足就適用**） | **整組 RSA 不輸出**，改成輸出資料需求：目前有依據的標題 N 則、說明 M 則，距離平台最低要求還差幾則，以及要補到最低要求需要哪一類證據。已寫出來的那幾則可以附在資料需求裡當進度，但**不要排版成看起來可以直接貼進帳戶的 RSA 區塊** |
+| Headlines 3-14, descriptions 2-3 | **Output as-is with the gap flagged** — this is a deliverable RSA, buildable and launchable, just with narrower combination coverage than 15/4. Gap note follows the "shared across every asset type" rules below |
+| Headlines <3 **or** descriptions <2 (either one triggers this) | **Don't output this RSA.** Output a data request instead: how many supported headlines/descriptions exist now, the gap to the platform minimum, and what evidence category would close it. The lines already written can be included as progress, but **don't format them as if they're ready to paste into the account** |
 
-**這一格的判斷是逐組 RSA 各自做的**：RSA1 湊得到 3／2、RSA2 湊不到，就輸出 RSA1、對 RSA2 出資料需求，不是整批一起放行或一起擋掉。
-- **顯示路徑：** 最多 2 段，每段 **≤15 字元**（這是平台上限）
-- **最終網址：** 必須提供，使用 https
-- **釘選：** 明確說明有沒有釘選特定位置，預設不釘選，除非使用者要求
-- **每廣告群組上限：** Google 規定每個廣告群組最多 **3 組 RSA**（這是平台限制）。使用者要求超過 3 組時，依廣告群組分組呈現
+**This judgment is made per RSA, independently**: RSA1 clears 3/2, RSA2 doesn't → output RSA1, issue a data request for RSA2 — not an all-or-nothing batch decision.
+- **Display path:** up to 2 segments, each **≤15 characters** (platform ceiling)
+- **Final URL:** required, https
+- **Pinning:** state plainly whether any position is pinned; default unpinned unless the user asks
+- **Per-ad-group cap:** Google allows at most **3 RSAs per ad group** (platform limit). User wants more → group by ad group and present that way
 
-## 中文字元計數（雙倍寬度規則，台灣代操必讀）
+## Character counting (double-width rule — required reading for Taiwan buys)
 
-**Google Ads 官方對中文、日文、韓文這類全形（wide）字元採雙倍寬度計算——每個全形字算 2 個字元，不是 1 個。** 來源：Google Ads 官方說明「About responsive search ads」<https://support.google.com/google-ads/answer/7684791>（查證日期：2026-07-20）：全形語言（如中文、日文、韓文）的每個字元計為 2 個字元額度，等同於「30 字元的標題限制，中文實際大約只能放 15 個全形字」。
+**Google Ads counts full-width (wide) characters — Chinese, Japanese, Korean — as double width: each counts as 2 characters, not 1.** Full-width-language characters count as 2 character credits each, so a 30-character headline limit holds roughly 15 full-width characters.
 
-**不要**只用純 Unicode 字元數（JavaScript `[...str].length`、Python `len(str)`）去估中文文案的字數——那樣會低估將近一半，可能讓表面上「在 30 字元內」的中文標題實際超限、平台後台會直接拒絕或截斷。
+last_verified: 2026-07-20
+Source: Google Ads Help, "About responsive search ads" — <https://support.google.com/google-ads/answer/7684791>
 
-### 可重現的計數演算法
+**Don't** estimate Chinese character count with a plain Unicode length (JavaScript `[...str].length`, Python `len(str)`) — that undercounts by nearly half, which can let a headline that looks within 30 characters actually exceed the limit and get rejected or truncated by the platform.
 
-用 Unicode 的 East Asian Width 屬性判斷每個字元是否為「全形／寬字元」：屬性為 `W`（Wide）或 `F`（Fullwidth）的字元算 2，其餘（`Na` Narrow、`H` Halfwidth、`A` Ambiguous、`N` Neutral，包含所有半形英數字、半形符號、空格）算 1。中文字（CJK 統一表意文字）、全形標點（，。！？「」）都屬於 `W`，會被正確算成 2。
+### Reproducible counting algorithm
+
+Use the Unicode East Asian Width property: characters with property `W` (Wide) or `F` (Fullwidth) count as 2, everything else (`Na` Narrow, `H` Halfwidth, `A` Ambiguous, `N` Neutral — all half-width Latin letters/digits, half-width punctuation, spaces) counts as 1. CJK ideographs and full-width punctuation (，。！？「」) are `W` and correctly count as 2.
 
 ```python
 import unicodedata
 
 def google_ads_char_count(s: str) -> int:
-    """依 Google Ads 雙倍寬度規則計算字元數（全形算 2，半形算 1）。"""
+    """Count characters per Google Ads' double-width rule (full-width = 2, half-width = 1)."""
     total = 0
     for ch in s:
         width = unicodedata.east_asian_width(ch)
@@ -55,208 +56,218 @@ def google_ads_char_count(s: str) -> int:
     return total
 ```
 
-範例：`google_ads_char_count("別再手動做報表")` → 7 個全形字 × 2 = **14**；`google_ads_char_count("報表自動化，5分鐘搞定")` → 10 個全形字元（含全形逗號）× 2 ＋ 半形數字「5」× 1 = **21**。
+### Practical notes
+- This is Google Ads' own published counting rule, not a visual-width approximation — the algorithm above matches what the platform actually enforces
+- Verify the final character count by pasting into the actual Google Ads UI or Google Ads Editor before delivery — don't rely solely on manual counting or this file's algorithm, since the platform's rule can be updated; the live input field is the only source guaranteed to match current platform behavior
 
-### 實務注意
-- 這是 Google Ads 平台自己公告的計算規則，不是視覺寬度的近似值——用上面的演算法算出來的數字才是平台實際判定超限與否的依據
-- 交付前務必用 Google Ads 後台或 Google Ads Editor 的實際輸入框貼上驗證一次字元數，不要只信賴人工計算或本檔的演算法——平台規則可能更新，這是唯一能保證跟當下平台判定一致的方法
+**RSA rules:**
+- **Provenance gate (defined once here, referenced by every section below): every independently-publishable text asset carries its own provenance** — a source-layer triple `source_id/evidence_class/source_license` (multiple sources, semicolon-separated) + a product-layer `publish_status` + **per-claim `claimN` binding**, **bound per asset, never shared across an entire RSA group**; field definitions and rationale live in `ad-creative`'s [`references/grounded-inputs.md`](../../ad-creative/references/grounded-inputs.md) ("provenance schema" and "claim-level check"). `ads` doing spec review sends back to `ad-creative` any line missing a field, missing `claimN`, or with a `blocked_*` `publish_status` — don't patch it here
+  - **`claimN` is a per-claim binding, not a flat semicolon list**, format: `claimN="claim text" ← <source_id>/<evidence_class> @<locator>`. **A single-claim asset still writes `claim1`** — it's not only for multi-claim assets; multiple claims get `claim1`, `claim2`, … in order, each pointing to its own source and locator — never inferred from list position
+  - **A claim needing more than one source** chains them with `+` on the same `claimN`: `claim1="claim text" ← source1/class1 @locator1 + source2/class2 @locator2` — this means "this claim is jointly supported by both sources," distinct from two separate claims each with their own source
+  - **A description with two claims sharing one source** writes two `claimN`s each pointing at the same `source_id`, each with its own `@locator`: `claim1="claim one" ← source_id/class @locator1`, `claim2="claim two" ← source_id/class @locator2`
+  - Reviewing this at `ads`: verify **every claim has at least one complete mapping** (`source_id` + `evidence_class` + `@locator`); any `claimN` missing a source, locator, or missing entirely → **set that line to `blocked_unsupported_claim` and send back** — the triple and `publish_status` being present isn't enough on its own, without the per-claim mapping there's no way to verify the source actually backs the claim
+  - **A conditionally-required field still counts as "missing" if absent**: any line whose triple includes `public_cited` needs `attribution` (the `cite:` field) shipped alongside it; missing → set to `blocked_needs_permission` and send back
+- **Evidence class depends on the claim type, not on whether it has a number**: ① **the product's own spec figures** (capacity, duration, price, warranty length, store count) = `A` (first-party fact) or `E` (third-party verified), either is fine ② **outcome figures** (how much a customer saved, how much they grew), **social proof** (user count, review count, sales ranking), and **competitive comparisons** (faster than, cheaper than, industry-first, market-leading) = **`E` only**. Reason: `A` is your own product spec — it proves "we ship in 3 days," it can't prove "faster than the competition," which needs verified data about the competitor, i.e. `E`. Same rule as `ad-creative`'s [`grounded-inputs.md`](../../ad-creative/references/grounded-inputs.md) — that schema is authoritative for review
+- **RSA's auto-combination amplifies this**: Google freely combines any headline with any description for display, so "this line is fine in isolation" isn't enough — an `A`-class spec figure paired with another line's comparative headline displays as an unverified competitive comparison once combined. Content carrying a mandatory disclosure or warning can't rely on a single headline to always show — pin it, or place it in a field that can't be split apart
+- Headlines need to stand alone individually and combine coherently in any pairing (Google displays random combinations)
+- Pin only when necessary (pinning reduces the platform's optimization room)
+- At least one keyword-driven headline
+- At least one benefit-driven headline
+- At least one CTA-driven headline
 
-**RSA 規則：**
-- **provenance gate（本檔正本，下方各節一律引用這一條）：每一則可獨立上稿的文字資產都要帶自己的一筆 provenance**——來源層三元組 `source_id/evidence_class/source_license`（多來源列多筆，用分號分隔）＋成品層 `publish_status`，**逐則綁定，不是整組 RSA 共用一組來源**；欄位定義與理由見 `ad-creative` 的 [`references/grounded-inputs.md`](../../ad-creative/references/grounded-inputs.md)「provenance schema」。`ads` 做規格複核時，缺欄位、或 `publish_status` 是 `blocked_*` 的那一則就退回 `ad-creative`，不要自己補。**條件式必填欄位一樣算「缺欄位」**：三元組裡有 `public_cited` 的那一則，必須另外帶 `attribution`（範本裡的 `cite:` 欄）並隨交付物一起輸出；缺 `attribution` → 這一則設 `blocked_needs_permission` 退回，不得因為「四個欄位都在」就放行
-- **證據等級要看宣稱的種類，不是「有沒有數字」**：①**產品自身的規格數字**（容量、天數、價格、保固期、門市家數）＝ `A`（自家產品事實）或 `E`（第三方查證）都可以 ②**使用成果數字**（客戶省了多少、成長多少）、**社會證明**（多少人用、多少評價、銷量排名）與**競品比較**（比誰快、比誰便宜、業界唯一、市佔第一）＝**只能 `E`**。理由：`A` 類是你自己的產品規格，它證明得了「我們 3 天到貨」，證明不了「比別人快」——後者需要對競品的查證資料，那是 `E`。這一條跟 `ad-creative` 的 [`grounded-inputs.md`](../../ad-creative/references/grounded-inputs.md) 是同一套規則，複核時以那份 schema 為正本
-- **RSA 的自動組合會放大這個問題**：Google 會把任意標題與說明組在一起顯示，所以「這一則單看沒問題」不夠——一則 `A` 類的規格數字跟另一則的比較級標題組在一起，顯示出來就成了未經查證的競品比較。含必要揭露或警語的內容不能靠某一則標題承擔，要用釘選確保它一定顯示，或改放進不會被拆開的欄位
-- 標題要能各自獨立成立，也要能任意組合都通順（Google 會隨機組合顯示）
-- 只在必要時才釘選標題（釘選會降低平台的優化空間）
-- 至少一則關鍵字導向標題
-- 至少一則效益導向標題
-- 至少一則 CTA 導向標題
+## Required accompanying assets (attach with every RSA request — conditioned on real supporting data)
 
-## 必附的附屬產出（每次 RSA 需求都要附上——但前提是有真實資料支撐，資料不夠時標「待確認」，不能捏造）
+**Check for real data backing these before producing them — output "data needed" fields when data is short, don't fabricate to hit a count.** Negative keywords need a real search-terms report or existing account data to be accurate; sitelinks need pages that genuinely exist on the client's site. Given only product information with no search-terms report or page list, generating plausible-looking negative keywords or URLs is fabricating a deliverable — a direct violation of this pack's no-fabrication rule:
 
-**先檢查有沒有支撐這些附屬產出的真實資料，資料不足時輸出「待確認」欄位，不要為了填滿數量而捏造內容**——否定關鍵字需要真實的搜尋字詞報告或既有帳戶數據才寫得準；附加連結需要客戶網站上真實存在的頁面網址。使用者只給了產品資訊、沒有提供搜尋字詞報告或網站頁面清單時，硬生出「看起來合理」的否定關鍵字或網址，等於捏造內容去冒充可以直接上稿的產出，這違反本技能包全篇「不捏造」的原則：
+1. **Ad group structure**, labeled `Ad group structure:` — list each ad group's theme, target keywords (match type), and which RSAs map to it (usually derivable from the product/audience info the user already provided, no extra data needed)
 
-1. **廣告群組結構**，標註 `廣告群組結構：`——列出每個廣告群組的主題、目標關鍵字（比對類型），以及對應到哪些 RSA（這部分通常可以從使用者提供的產品與受眾資訊合理推導，不需要額外資料）
-**通用的輸出數量原則（先讀這一條，下面兩項都是它的展開）：輸出幾則由「你手上有幾筆站得住腳的證據」決定，不由目標數量決定。** 資料狀況不是只有「有」跟「沒有」兩種，最常見的其實是**中間狀態**——搜尋字詞報告有，但夠格當否定字的只有 3 個；網站有，但真的適合當附加連結的頁面只有 2 頁。**這種情況要輸出你真的有的那幾則，然後明確列出缺口，不是硬湊到門檻、也不是因為沒到門檻就整段不給。** 硬湊會產出捏造內容（被直接複製進帳戶會造成實際損害），整段不給則是把使用者手上真實可用的東西也一起丟掉。
+**General output-quantity rule (read this first, the next two items expand on it): how many lines to output is decided by how much defensible evidence is on hand, not by the target count.** Data availability isn't binary — the common case is a **middle state**: a search-terms report exists, but only 3 terms in it actually earn negative-keyword status; a website exists, but only 2 pages genuinely fit as sitelinks. **Output exactly what's defensible, then state the gap clearly — don't pad to the target, and don't withhold the whole section just because it's short of the target.** Padding produces fabricated content (real harm if copied straight into the account); withholding the whole section throws away real, usable output.
 
-2. **否定關鍵字清單**，標註 `否定關鍵字：`——**8 則是「資料充足時的目標值」，不是任何情況都要湊滿的硬性下限**，依實際證據數量分三種情況：
-   - **可佐證的字詞 ≥8 則**：輸出 ≥8 則，區分廣告群組層級與活動層級，每一則都要能對應到報告裡實際出現過的搜尋字詞
-   - **可佐證的字詞 1-7 則**（有報告，但報告裡真的該擋的字詞不到 8 個；或使用者只提供了既有的部分否定字清單）：**輸出你實際有依據的那幾則就好**，並在清單後面加一段缺口說明。例如「本次列出 3 則，全部對應搜尋字詞報告中實際出現且明確與業務無關的字詞；該報告涵蓋期間內沒有其他足以判定為無效流量的字詞。累積更長期間（建議 30-90 天）的報告後可再補。」**不要用推測補到 8 則**
-   - **可佐證的字詞 0 則**（完全沒有搜尋字詞報告、也沒有既有否定字清單）：輸出**零則**，改成輸出一段「資料需求」——明講需要什麼（Google Ads 搜尋字詞報告，建議近 30-90 天；或既有帳戶已建立的否定關鍵字清單）、從哪裡取得（Google Ads →「深入分析與報表」→「搜尋字詞」，或 Google Ads Editor 匯出）、拿到之後才能產出這一項
-   - **三種情況共同的禁止事項**：**不要為了填滿數量而列出「推測方向」**——推測出來的否定關鍵字會被使用者直接複製進帳戶，擋掉真正有轉換的字詞，比不給更糟；「標示為推測」不能抵銷這個風險，因為清單一旦成形就會被當成可上稿的產出使用
-3. **附加連結**，標註 `附加連結：`——**需要真實存在的頁面網址**，同樣依實際證據數量分三種情況（4 則是資料充足時的目標值，不是硬性下限）：
-   - **真實可用頁面 ≥4 個**：輸出 ≥4 則
-   - **真實可用頁面 1-3 個**（小型網站、單頁式到達頁常態如此）：**就輸出那 1-3 則**，並加一段缺口說明。例如「本次列出 2 則，對應網站目前實際存在的頁面；Google 建議至少 4 則以提高附加連結的曝光機會，若之後新增常見問題、案例等頁面可再補。」**不要編造第 3、4 個網址，也不要把同一頁重複列成兩則不同標題來湊數**
-   - **真實可用頁面 0 個**（使用者沒提供任何頁面清單）：輸出**零則**，改成輸出「資料需求：請提供實際網站的頁面網址清單（例如定價、常見問題、案例、聯絡我們等頁面的完整 https 網址）」
-   - **共同的禁止事項**：不要編造網址，也不要用「建議連去的頁面類型」佔位充當已交付的附加連結
+2. **Negative keywords**, labeled `Negative keywords:` — **8 is the target when evidence is sufficient, not a floor to hit regardless**, three tiers by actual evidence:
+   - **≥8 defensible terms**: output ≥8, split by ad-group and campaign level, each one mapped to a term that actually appeared in the report
+   - **1-7 defensible terms** (a report exists, but fewer than 8 terms in it genuinely warrant blocking; or the user only supplied a partial existing negative list): **output only what's defensible**, with a gap note after the list. E.g. "3 terms listed here, all matched to search terms in the report that are clearly unrelated to the business. No other term in this report's window qualified. A longer window (30-90 days recommended) may surface more." **Don't guess-fill to 8**
+   - **0 defensible terms** (no search-terms report, no existing negative list): output **zero**, replace with a data request — what's needed (a Google Ads search-terms report, ~30-90 days recommended; or an existing account negative-keyword list), where to get it (Google Ads → Insights & Reports → Search Terms, or a Google Ads Editor export)
+   - **Common to all three tiers**: **never list "plausible-sounding guesses" to pad the count** — a guessed negative keyword gets pasted straight into the account and can block real converting traffic, which is worse than not providing one; labeling it "speculative" doesn't cancel that risk, since a finished-looking list gets used as a finished deliverable
+3. **Sitelinks**, labeled `Sitelinks:` — **needs real existing page URLs**, same three-tier handling (4 is the target, not a floor):
+   - **≥4 real usable pages**: output ≥4
+   - **1-3 real usable pages** (common for a small site or single-page landing page): **output those 1-3**, with a gap note. E.g. "2 listed here, matching pages the site currently has. Google recommends at least 4 for better sitelink exposure; more can be added once FAQ/case-study pages exist." **Don't invent a 3rd or 4th URL, and don't list the same page twice under different titles to pad the count**
+   - **0 real usable pages** (user supplied no page list): output **zero**, replace with "Data needed: a list of real page URLs (e.g. full https URLs for pricing, FAQ, case studies, contact)"
+   - **Common to all tiers**: don't fabricate URLs, and don't use "a page type we'd suggest" as a placeholder for a delivered sitelink
+4. **Callouts** (each ≤25 characters), labeled `Callouts:` — **the easiest asset to fabricate under "it's short, just fill four."** Every callout is a public factual claim ("free shipping," "24-hour dispatch," "10-year warranty," "30 stores nationwide") — getting it wrong is false advertising. Evidence = explicitly stated by the user, or explicitly published on the client's site:
+   - **≥4 defensible facts**: output ≥4, each tagged with its source
+   - **1-3 defensible facts**: output those + gap note. E.g. "2 listed, based on shipping and return terms explicitly stated in the product info you provided. Google recommends at least 4; to close the gap, provide the site's terms of service or FAQ page."
+   - **0 defensible facts**: output **zero** + data request ("needed: service terms explicitly published on the official site, e.g. shipping threshold, dispatch time, warranty length, store count, payment methods")
+   - **Prohibited**: padding with marketing adjectives ("guaranteed quality," "customer-first," "professional team") — these aren't factual claims and carry no information, and they trip both this pack's no-fabrication and no-promised-results rules
 
-4. **額外資訊**（每則 ≤25 字元），標註 `額外資訊：`——**這一項最容易被當成「反正是短句、隨便湊四則」而捏造**。每則額外資訊都是對外的事實宣稱（「免運費」「24 小時出貨」「10 年保固」「全台 30 家門市」），寫錯就是不實廣告。證據＝使用者明確講過、或客戶網站上實際載明的服務條件：
-   - **可佐證的事實 ≥4 則**：輸出 ≥4 則，每則標註依據來源
-   - **可佐證的事實 1-3 則**：輸出那幾則＋缺口說明。例如「本次列出 2 則，依據為你提供的產品說明中明確載明的出貨與退換貨條件。Google 建議至少 4 則；補齊方式：提供官網的服務條款或常見問題頁面。」
-   - **可佐證的事實 0 則**：輸出**零則**＋資料需求（「需要：官網明確載明的服務條件，例如運費門檻、出貨時間、保固期、門市數量、付款方式」）
-   - **禁止**：把行銷形容詞（「品質保證」「服務至上」「專業團隊」）當成額外資訊湊數——它們不是事實宣稱也沒有資訊量，而且撞上本包「不捏造」與「不承諾特定成效」兩條原則
+5. **Structured snippet** (1 set, header chosen from Google's fixed list), labeled `Structured snippet:` — the platform requires **at least 3 values** to build one, so this item is **all-or-nothing**, no partial output:
+   - **≥3 defensible same-category items** (e.g. genuinely 3+ service types, models, or courses): output one set, values all matching what's actually offered
+   - **<3 defensible same-category items**: **don't output the section**, replace with a data request ("needed: at least 3 real, same-category items — e.g. a service list, model numbers, or course names. Only N on hand now, short of the platform's minimum")). **Don't mix different categories to force a count of 3** (a Service Catalog header mixed with a brand name, or one service split into two names) — a semantic mismatch is the most common reason a structured snippet fails review
 
-5. **結構化摘要**（1 組，標題選自 Google 固定清單），標註 `結構化摘要：`——平台規定**至少 3 個值**才建得起來，所以這一項是**全有全無**，沒有「部分輸出」的中間狀態：
-   - **可佐證的同類項目 ≥3 個**（例如真的有 3 種以上服務項目、型號、課程）：輸出一組，值全部對得上實際提供的項目
-   - **可佐證的同類項目 <3 個**：**整項不輸出**，改成資料需求（「需要：至少 3 個同類且實際提供的項目，例如服務項目清單、產品型號、課程名稱。目前手上只有 N 個，湊不到平台最低要求」）。**不要為了湊到 3 個而把不同類的東西混進同一組**（`Service Catalog` 底下混入品牌名、把一個服務拆成兩個名字），語意不符是結構化摘要最常見的審核不過原因
+**Shared across every asset type:**
 
-**所有資產類型共用的三件事**：
+- **Every user-facing line of text carries provenance and passes the full compliance check.** Applies to every independently-publishable text asset: RSA headlines and descriptions, **sitelink titles and their two description lines**, **callouts**, **every structured-snippet value**, **display paths**. These all display independently on the search results page — a reader has no way to know which back-end asset type produced them
+  - Fields, fail-closed conditions, the `public_cited` → `attribution` requirement, and `evidence_class` by claim type (product spec figures = `A` or `E`; outcome figures/social proof/competitive comparisons = **`E` only**) — **all apply unchanged** to these asset types, per the provenance gate above
+  - **The regulated-industry check below (Compliance) applies unchanged to these assets too** — a 25-character callout claiming "improves allergies" trips the same food-safety-law article a headline would; sitelink descriptions especially get mistaken for "just navigation text" and skipped
+  - Asset text that needs creative writing (a rewrite, a new hook, picking a selling point) → **hand off to `ad-creative`**, `ads` only does spec and compliance review here. Plain restatement of an existing fact the user already supplied (a page title, published service terms, an actual service list) can be assembled here
+- **A natural-language "based on: ..." note doesn't replace the fields** — both are required: the fields give downstream tooling a machine-readable audit trail, "based on:" gives a human-readable trace
+- **Cite the source type and an opaque ID only — never the original text or a URL**: `ads`' deliverables and `ad-creative`'s outputs follow the same rule (see [`grounded-inputs.md`](../../ad-creative/references/grounded-inputs.md), "data handling") — **raw quotes, the user's own words, post URLs, reviewer handles never go into outputs.** The "based on:" field states **source type + `source_id`** ("based on: search-terms report `srchterm-20260729-001`", "based on: site terms of service `productfact-20260729-004`"), never a copy of the text or link. The `source_id` ↔ original-text/URL mapping stays only in a controlled `inputs/` location
+  - **One exception: the URL fields the ad itself needs to function** — RSA's final URL, sitelink target URLs. These are functional fields, not source citations. **Limited to the client's own public, PII-free pages**, and **must not carry a query string or fragment** (tracking parameters belong in the platform's own tracking template, not here); any URL with a `token`/`code`/`email`/order number gets refused, with a note asking for a public version instead
+- **A line with no citable source is a line that doesn't get output**
+- **A gap note is written to be actionable, not a disclaimer**: every gap note covers three things — ① how many were actually output this run, on what basis ② why it's short of the target ③ what's needed to close the gap (which report, which pages). "Insufficient data, for reference only" alone doesn't count
+- **"Incomplete format" beats "fabricated content"**: wherever a quantity target conflicts with the no-fabrication rule, **no-fabrication wins**. Delivering fewer lines, or none at all with a data request, is an acceptable output; padding isn't
 
-- **會顯示給使用者看到的文字，逐則帶 provenance，並跑完整合規檢查**。適用範圍是**所有可獨立上稿的文字資產**：RSA 標題與說明、**附加連結的標題與兩行說明**、**額外資訊**、**結構化摘要的每一個值**、**顯示路徑**。這些都會獨立出現在搜尋結果頁上，讀者不會知道它在後台屬於哪一類資產。
-  - 欄位、fail-closed 條件、`public_cited` 的 `attribution` 要求、`evidence_class` 依宣稱種類判斷（產品自身規格數字＝ `A` 或 `E`；使用成果數字、社會證明與競品比較＝**只能 `E`**）——**一律照上方「RSA 規則」的 provenance gate**，這幾類資產一字不減地適用
-  - **下方「台灣醫療／保健食品廣告合規」那一節的逐則檢查，對這些資產一字不減地適用**——一則 25 字元的額外資訊寫「改善過敏」，跟標題寫「改善過敏」踩的是同一條食安法第 28 條。附加連結的說明尤其容易被當成「只是導覽文字」而跳過檢查
-  - 這幾類資產的文字若已經進入需要創意撰寫的範圍（要重寫、要下標、要挑賣點），**轉交 `ad-creative` 產出**，本技能只做規格與合規複核。單純照搬使用者提供的既有事實（頁面標題、官網載明的服務條件、實際的服務項目清單）可以在這裡整理
-- **自然語言的「依據：...」不能取代欄位**：兩者都要有——欄位給下游做機器可讀的稽核，「依據：」給人看的可追溯說明
-- **證據來源要寫出來，但只能寫不透明識別碼與來源類型，不能寫原文或網址**：`ads` 的交付物與 `ad-creative` 的產出遵守同一條規則（見 [`grounded-inputs.md`](../../ad-creative/references/grounded-inputs.md)「資料處理原則」）——**原文、使用者原話、貼文網址、評論者帳號一律不進 outputs**。「依據：」欄位寫的是**來源類型＋`source_id`**（「依據：搜尋字詞報告 `srchterm-20260729-001`」「依據：官網服務條款 `productfact-20260729-004`」），不是把那句話或那個網址抄一遍。`source_id` ↔ 原文／網址的對照表只留在受控的 `inputs/`
-  - **唯一的例外是廣告本身必須帶的網址欄位**：RSA 的最終網址、附加連結的目標網址——這是廣告要能運作的必要欄位，不是來源標註。這類網址**限於客戶自家、公開可存取、不含個資的頁面**，且**不得帶 query 參數與 fragment**（追蹤參數在平台的追蹤範本設定，不寫進這裡）；任何帶 `token`／`code`／`email`／訂單編號的網址一律不寫進交付物，改回報「這個頁面需要參數才能開，請提供公開版網址」
-- **寫不出來源的那一則，就是不該輸出的那一則**
-- **缺口說明要寫成可行動的，不是免責聲明**：每一段缺口說明都要講清楚三件事——①這次實際輸出幾則、依據是什麼 ②為什麼沒到建議數量 ③要補到建議數量需要什麼（哪份報告、哪些頁面）。只寫「資料不足，僅供參考」不算數
-- **「格式不完整」優於「內容捏造」**：本規格裡任何數量要求跟「不捏造」衝突時，**一律以不捏造為準**。少交幾則、或整項不交並附資料需求，都是可接受的輸出；湊數不是
+## Regulated-industry compliance (applies whenever the product context touches these industries)
 
-## 台灣醫療／保健食品廣告合規（產品情境涉及相關產業時適用）
+If `.agents/profile.md` or a positioning document shows a regulated business — medical facility, aesthetic clinic, pharmaceutical, or supplement — load the GEO module matching `profile.md`'s `geo` (e.g. [`geo/tw.md`](geo/tw.md) for `TW`) before applying the checks below; it carries the industry table and the specific-article checks. GEO with no matching module → follow `ads/SKILL.md`'s GEO section (state the gap, run the freshness protocol against the current official source).
 
-若 `.agents/product-marketing.md` 顯示這是台灣的醫療院所、醫美診所、藥品、或保健食品業務，先讀 [`compliance-taiwan.md`](compliance-taiwan.md) 的六大產業速查表（附具體條文與查證日期），再套用以下檢查。
+**Checked object is every piece of text that displays** — not only headlines and descriptions. Sitelink titles and descriptions, callouts, structured-snippet values, and display paths all get the same check; a short field isn't a looser bar — regulators judge a 25-character callout the same as a 30-character headline.
 
-**檢查對象是「每一則會顯示出去的文字」，不是只有標題與說明**——附加連結的標題與說明、額外資訊、結構化摘要的值、顯示路徑，全部逐則跑同一套。它們的字數短不代表限制比較鬆，「25 字元的額外資訊」跟「30 字元的標題」在法規眼中都是廣告內容。
+The above is operational guidance, not legal advice or the complete text of the law. Have the client's own legal or compliance contact review copy before launch, especially after a regulation changes.
 
-- **醫療／醫美**（醫療法第 85 條、第 86 條）：RSA 的標題與說明是**付費投放的廣告內容**，適用第 85 條第 1 項的得刊登範圍，**不適用**第 85 條第 3 項對「醫療機構自己的網際網路資訊」放寬的規定——診所官網文案能寫的東西比 RSA 寬，不要把官網段落直接剪成標題。逐則檢查兩件事：
-  - **①這則標題／說明講的內容，落在第 85 條第 1 項哪一款？** 注意第 6 款不是空的：衛福部公告（103 年 1 月 24 日衛部醫字第 1031660048 號）容許登載**疾病名稱、診療項目、檢查及檢驗項目、醫療儀器及經完成人體試驗之醫療技術、醫療費用**。所以「音波拉提」「近視雷射諮詢」「初診檢查 NT$X」這類**診療項目與費用**的標題是有依據的，不必一律改成中性語。真正不在範圍內的是**療效宣稱、術前術後對比、他人見證**這類內容——這些沒有任何一款容許
-  - **②有沒有踩到第 86 條的宣傳方式禁令？** 「保證」「完全根治」「一勞永逸」「永不復發」「全國第一」這類最高級／療效保證用詞屬第 86 條第 7 款「其他不正當方式」，且另會撞上第 103 條第 2 項的虛偽誇張，標題說明一律不能用。**這一關跟第一關獨立**：項目本身可以登，不代表怎麼講都行
-  - 完整的三層判斷（含「釋字第 744 號是化粧品廣告事前審查案、與醫療法第 85 條無關」這個常見誤引）見 [`compliance-taiwan.md`](compliance-taiwan.md)「醫療廣告的三層判斷」
-- **保健食品／機能性食品**（食品安全衛生管理法第 28 條）：不得使用「治療」「根治」「痊癒」「防止／改善○○疾病」等醫療效能字詞；未取得衛福部核可健康食品標章的產品不能宣稱「調節生理機能」
-- **藥品**（藥事法第 66 條）：廣告文案（含 RSA 標題說明）屬於刊播內容的一部分，必須是客戶已送審核准的版本，不能自行修改核准後的文案去產生新的 RSA 變體
+## Output order (mandatory — follow this order so truncation, if it happens, drops the least-critical part last)
 
-**被上述規則擋掉的療效宣稱型標題**，改用中性表述取代：「門診」「諮詢」「評估」「安排諮詢」「了解更多」——注意這是**替代方案，不是把所有醫療類標題都降級成中性語**，公告容許的診療項目、檢查項目、醫療費用可以照實寫。若使用者的產品明確鎖定特定縣市／商圈，依需求加入地理修飾詞（例如「台北」「信義區」）。
+1. **Ad group structure** (brief)
+2. **Negative keywords** (≥8 when evidence supports it; 1-7 output as-is + gap note; 0 output zero + data request — placed before the RSAs so truncation doesn't drop it)
+3. **Sitelinks** (≥4 real pages → ≥4; 1-3 → output as-is + gap note; 0 → zero + data request)
+4. **Callouts** (≥4 defensible facts → ≥4; 1-3 → output as-is + gap note; 0 → zero + data request)
+5. **Structured snippet** (≥3 same-category items → 1 set; <3 → don't output + data request)
+6. **RSA1, RSA2, RSA3** (largest section, placed last — truncation here doesn't affect what's already confirmed above). **Headlines and descriptions come from `ad-creative`**, per the handoff at the top of this file; `ads` does spec and compliance review here
 
-> 上述僅為操作面的合規提醒，不是法律意見或條文全文，且台灣的醫療法、藥事法、食品安全衛生管理法對廣告用詞另有更完整的規定與例外（含子法認定準則）——實際投放前務必請客戶端法務或合規窗口複核文案，尤其是新法規異動時。
+## Structured snippet spec
 
-## 輸出順序（強制——依此順序輸出，避免內容被截斷時遺漏關鍵部分）
+- **Header**: pick only from Google's fixed header list, never invent one — common options include Amenities, Brands, Courses, Degree Programs, Destinations, Featured Hotels, Insurance Coverage, Models, Neighbourhoods, Service Catalog, Shows, Styles, Types. Header must semantically match the values below it — a mismatch is the most common review failure
+- **Values**: at least 3, at most 10, 4+ recommended; each ≤25 characters (double-width rule applies)
 
-1. **廣告群組結構**（簡短）
-2. **否定關鍵字**（證據 ≥8 則時輸出 ≥8；1-7 則時照實輸出那幾則＋缺口說明；0 則時輸出零則＋資料需求。三種情況都放在 RSA 之前，避免輸出過長被截斷時遺漏）
-3. **附加連結**（真實頁面 ≥4 個時輸出 ≥4；1-3 個時照實輸出那幾則＋缺口說明；0 個時輸出零則＋資料需求）
-4. **額外資訊**（可佐證事實 ≥4 則時輸出 ≥4；1-3 則時照實輸出＋缺口說明；0 則時輸出零則＋資料需求）
-5. **結構化摘要**（同類項目 ≥3 個時輸出 1 組；<3 個時整項不輸出＋資料需求）
-6. **RSA1、RSA2、RSA3**（篇幅最大的部分放最後——就算被截斷也不影響前面已確認的內容）。**標題與說明由 `ad-creative` 產出**，見本檔開頭的分工說明；`ads` 在這裡做的是規格與合規複核
+## Output template (mandatory format)
 
-## 結構化摘要規格
-
-- **標題（Header）**：只能從 Google Ads 固定的標題清單挑一個，不能自創——常見的有：Amenities（設施）、Brands（品牌）、Courses（課程）、Degree Programs（學位課程）、Destinations（目的地）、Featured Hotels（特色飯店）、Insurance Coverage（保險項目）、Models（型號）、Neighbourhoods（社區）、Service Catalog（服務項目）、Shows（節目）、Styles（風格）、Types（類型）。標題要跟底下的值語意相符，語意不符是最常見的審核不過原因
-- **值（Values）**：至少 3 個，最多 10 個，建議至少 4 個；每個值 ≤25 字元（雙倍寬度規則，見上方「中文字元計數」）
-
-## 輸出範本（強制格式）
-
-**`source_license` 本身永遠必填，不得留空；範本裡的 `cite:` 欄才是條件式必填**：值取自 `ad-creative` 登記簿（`inputs/SOURCES.md`）該列的 `attribution` 字串；其餘 `source_license` 類型（非 `public_cited`）的 `cite:` 才留空。`cite:` 何時必填、缺了怎麼處理，照上方「RSA 規則」的 provenance gate。
+**`source_license` is always required, never blank; the template's `cite:` field is the conditionally-required one** — its value comes from `ad-creative`'s registry (`inputs/SOURCES.md`) `attribution` string for that row; `cite:` stays blank for any `source_license` type other than `public_cited`. When `cite:` is required and what happens if it's missing follows the provenance gate above.
 
 ```
-廣告群組結構：
-- 廣告群組1 [主題]：關鍵字（比對類型） → RSA1、RSA2
-- 廣告群組2 [主題]：...
+Ad group structure:
+- Ad group 1 [theme]: keywords (match type) → RSA1, RSA2
+- Ad group 2 [theme]: ...
 
-否定關鍵字：
-  〔情況 A：可佐證字詞 ≥8 則〕
-  活動層級：
-    - <關鍵字>
-    - <關鍵字>
-    （至少 4 則）
-  廣告群組層級：
-    - 廣告群組1：<關鍵字>、<關鍵字>
-    - 廣告群組2：<關鍵字>、<關鍵字>
-    （再加至少 4 則——總計 ≥8 則）
-  〔情況 B：可佐證字詞 1-7 則，照實輸出，不補足〕
-  活動層級：
-    - <關鍵字>
-  缺口說明：<照上方「所有資產類型共用的三件事」的缺口說明三件事>
-  〔情況 C：可佐證字詞 0 則，整段改成〕
-  （本次不輸出否定關鍵字）
-  資料需求：<照上方第 2 項情況 C：要哪份報告、從哪裡取得>
+Negative keywords:
+  [Tier A: ≥8 defensible terms]
+  Campaign level:
+    - <term>
+    - <term>
+    (at least 4)
+  Ad group level:
+    - Ad group 1: <term>, <term>
+    - Ad group 2: <term>, <term>
+    (at least 4 more — ≥8 total)
+  [Tier B: 1-7 defensible terms, output as-is, no padding]
+  Campaign level:
+    - <term>
+  Gap note: <the three things, per "shared across every asset type" above>
+  [Tier C: 0 defensible terms, replace the whole section with]
+  (No negative keywords output this run)
+  Data needed: <per tier-C guidance above: which report, where to get it>
 
-附加連結：
-  〔情況 A：真實可用頁面 ≥4 個〕
-  - <標題（≤25字元）> | <說明1（≤35字元）> | <說明2（≤35字元）> | 網址
-    ｜ src: <source_id>/<A-F>/<source_license> ｜ publish: <publish_status> ｜ cite: <attribution｜僅 public_cited>
-  （至少 4 則）
-  〔情況 B：真實可用頁面 1-3 個，照實輸出，不補足〕
-  - <標題> | <說明1> | <說明2> | 網址
-    ｜ src: .../.../... ｜ publish: ... ｜ cite: ...
-  缺口說明：<三件事，同上>
-  〔情況 C：真實可用頁面 0 個，整段改成〕
-  （本次不輸出附加連結）
-  資料需求：<照上方第 3 項情況 C>
+Sitelinks:
+  [Tier A: ≥4 real usable pages]
+  - <title (≤25 chars)> | <description line 1 (≤35 chars)> | <description line 2 (≤35 chars)> | URL
+    | src: <source_id>/<A-F>/<source_license> | publish_status: <publish_status> | cite: <attribution|public_cited only>
+    claim1="<claim text>" ← <source_id>/<A-F> @<locator>
+    (more than one claim → list claim2, claim3…; a single-claim line still writes claim1/@locator; a multi-source claim chains with +: claim1="…" ← source1/class1 @locator1 + source2/class2 @locator2)
+  (at least 4)
+  [Tier B: 1-3 real usable pages, output as-is, no padding]
+  - <title> | <description1> | <description2> | URL
+    | src: .../.../... | publish_status: ... | cite: ...
+    claim1="..." ← .../... @...
+  Gap note: <the three things, as above>
+  [Tier C: 0 real usable pages, replace the whole section with]
+  (No sitelinks output this run)
+  Data needed: <per tier-C guidance above>
 
-額外資訊（每則 ≤25 字元）：
-  〔情況 A：可佐證事實 ≥4 則〕
-  - <額外資訊>（依據：<來源類型＋source_id，例如「官網服務條款 productfact-20260729-004」；
-                不寫原文、不寫網址、不寫使用者原話>）
-    ｜ src: <source_id>/<A-F>/<source_license> ｜ publish: <publish_status> ｜ cite: <attribution｜僅 public_cited>
-  （至少 4 則）
-  〔情況 B：可佐證事實 1-3 則，照實輸出，不補足〕
-  - <額外資訊>（依據：<來源類型＋source_id>）
-    ｜ src: .../.../... ｜ publish: ... ｜ cite: ...
-  缺口說明：<三件事，同上>
-  〔情況 C：可佐證事實 0 則，整段改成〕
-  （本次不輸出額外資訊）
-  資料需求：<照上方第 4 項情況 C>
+Callouts (each ≤25 chars):
+  [Tier A: ≥4 defensible facts]
+  - <callout> (based on: <source type + source_id, e.g. "site terms of service productfact-20260729-004";
+                no raw text, no URL, no user's own words>)
+    | src: <source_id>/<A-F>/<source_license> | publish_status: <publish_status> | cite: <attribution|public_cited only>
+    claim1="<claim text>" ← <source_id>/<A-F> @<locator>
+    (more than one claim → list claim2, claim3…; a single-claim line still writes claim1/@locator; a multi-source claim chains with +: claim1="…" ← source1/class1 @locator1 + source2/class2 @locator2)
+  (at least 4)
+  [Tier B: 1-3 defensible facts, output as-is, no padding]
+  - <callout> (based on: <source type + source_id>)
+    | src: .../.../... | publish_status: ... | cite: ...
+    claim1="..." ← .../... @...
+  Gap note: <the three things, as above>
+  [Tier C: 0 defensible facts, replace the whole section with]
+  (No callouts output this run)
+  Data needed: <per tier-C guidance above>
 
-結構化摘要（全有全無，平台最低要求 3 個值）：
-  〔情況 A：同類項目 ≥3 個〕
-  標題：<Service Catalog／Brands／...（從固定清單挑一個，跟下方值語意相符）>
-  值（≥3，每個 ≤25 字元，全部對得上實際提供的項目；三欄逐值標）：
-    - <值1>｜ src: <source_id>/<A-F>/<source_license> ｜ publish: <publish_status> ｜ cite: <attribution｜僅 public_cited>
-    - <值2>｜ src: .../.../... ｜ publish: ... ｜ cite: ...
-    - <值3>｜ src: .../.../... ｜ publish: ... ｜ cite: ...
-  〔情況 B：同類項目 <3 個，整項不輸出〕
-  （本次不輸出結構化摘要）
-  資料需求：<照上方第 5 項：差幾個、需要哪份清單>
+Structured snippet (all-or-nothing, platform minimum is 3 values):
+  [Tier A: ≥3 same-category items]
+  Header: <Service Catalog / Brands / ... (from the fixed list, semantically matching the values below)>
+  Values (≥3, each ≤25 chars, all matching what's actually offered; each tagged individually):
+    - <value 1> | src: <source_id>/<A-F>/<source_license> | publish_status: <publish_status> | cite: <attribution|public_cited only>
+      claim1="<value 1's claim text>" ← <source_id>/<A-F> @<locator>
+    - <value 2> | src: .../.../... | publish_status: ... | cite: ...
+      claim1="..." ← .../... @...
+    - <value 3> | src: .../.../... | publish_status: ... | cite: ...
+      claim1="..." ← .../... @...
+  [Tier B: <3 same-category items, don't output the section]
+  (No structured snippet output this run)
+  Data needed: <per Tier C guidance above: how many short, what list is needed>
 
-RSA1 — [廣告群組名稱]  ← 標題與說明由 ad-creative 產出，ads 做規格與合規複核
-  最終網址：https://...（自家公開頁面，不帶 query 與 fragment）
-  顯示路徑（每段 ≤15 字元；**兩段各自是一則可獨立上稿的文字資產，各自一筆 provenance，不共用**）：
-    路徑1：<路徑文字>｜ src: <source_id>/<A-F>/<source_license> ｜ publish: <publish_status> ｜ cite: <attribution｜僅 public_cited>
-    路徑2：<路徑文字>｜ src: .../.../... ｜ publish: ... ｜ cite: ...
-  （缺任一欄、或 publish 是 blocked_* → **那一段路徑不輸出**，留空即可；
-    顯示路徑留空是合法的 RSA，湊一個沒有依據的路徑文字不是）
-  標題（目標 15 則，證據不足時照實減量，每則 ≤30 字元）：
-    1. <標題>（NN 字元）｜ src: <source_id>/<A-F>/<source_license> ｜ publish: <publish_status> ｜ cite: <attribution｜僅 public_cited>
+RSA1 — [ad group name]  ← headlines and descriptions come from ad-creative, ads does spec and compliance review
+  Final URL: https://... (client's own public page, no query string or fragment)
+  Display path (each segment ≤15 chars; **both segments are independently-publishable assets, each with its own provenance, never shared**):
+    Path 1: <text> | src: <source_id>/<A-F>/<source_license> | publish_status: <publish_status> | cite: <attribution|public_cited only>
+      claim1="<the path text itself>" ← <source_id>/<A-F> @<locator>
+    Path 2: <text> | src: .../.../... | publish_status: ... | cite: ...
+      claim1="..." ← .../... @...
+  (either field missing (including claimN), or publish_status is blocked_* → **that path segment isn't output**, leave it blank;
+    an unfilled display path is a legal RSA, padding one with an unsupported text isn't)
+  Headlines (target 15, reduce per evidence tiers when data is thin, each ≤30 chars):
+    1. <headline> (NN chars) | src: <source_id>/<A-F>/<source_license> | publish_status: <publish_status> | cite: <attribution|public_cited only>
+       claim1="<this headline's claim text>" ← <source_id>/<A-F> @<locator>
     ...
-  說明（目標 4 則，證據不足時照實減量，每則 ≤90 字元）：
-    1. <說明>（NN 字元）｜ src: <source_id>/<A-F>/<source_license> ｜ publish: <publish_status> ｜ cite: <attribution｜僅 public_cited>
+  Descriptions (target 4, reduce per evidence tiers when data is thin, each ≤90 chars):
+    1. <description> (NN chars) | src: <source_id>/<A-F>/<source_license> | publish_status: <publish_status> | cite: <attribution|public_cited only>
+       claim1="<this description's claim text>" ← <source_id>/<A-F> @<locator>
+       (more than one claim → list claim2…; two claims in one line sharing a source still each write their own claimN and @locator)
     ...
-  釘選：H1=無；H2=無；...（或明確標示釘選位置）
-  〔標題 3-14 則或說明 2-3 則時，比照其他資產加一段〕
-  缺口說明：<三件事，同上；依據寫 ad-creative 的 grounded input 分級結果>
+  Pinning: H1=none; H2=none; ... (or state pinned positions explicitly)
+  [When headlines are 3-14 or descriptions are 2-3, add, like the other asset types]
+  Gap note: <the three things, as above; basis is ad-creative's grounded-input tier result>
 
-〔標題 <3 則 或 說明 <2 則：整組不輸出，見上方「減量的地板」，改成〕
-（本組 RSA 不輸出——低於 Google 建立 RSA 的最低要求）
-  資料需求：目前有依據的標題 N 則、說明 M 則，還差 <X> 則標題、<Y> 則說明。
-           需要：<哪一類證據，對應 ad-creative 的 evidence_class>。
-           已有的那幾則列在下方供參考，尚不足以建立 RSA，請勿直接貼進帳戶：
-           - <標題>｜ src: .../.../... ｜ publish: ... ｜ cite: ...
+[Headlines <3 or descriptions <2: don't output this RSA, see "Floor for reduction" above, replace with]
+(This RSA set not output — below the platform's minimum to create an RSA)
+  Data needed: currently N headlines, M descriptions supported, short <X> headlines, <Y> descriptions.
+           Needed: <which evidence category, mapped to ad-creative's evidence_class>.
+           The lines on hand are listed below for reference — not yet enough to build an RSA, don't paste directly into the account:
+           - <headline> | src: .../.../... | publish_status: ... | cite: ...
+             claim1="..." ← .../... @...
 
 RSA2 — ...
 RSA3 — ...
 ```
 
-## 回覆前自我檢查
+## Self-check before replying
 
-送出前在腦中跑一次這份清單：
+Run this checklist mentally before sending:
 
-- [ ] **標題與說明是由 `ad-creative` 產出的**，不是我在 `ads` 裡自己寫的；我做的是規格與合規複核
-- [ ] 每組 RSA 的標題與說明數量，是依實際證據決定的（目標 15／4，不足時照實減量＋缺口說明），**沒有為了湊滿目標數量而生出無依據的變體或換句話說的重複**
-- [ ] **每一組 RSA 都至少有 3 則標題與 2 則說明**（Google 建立 RSA 的最低要求）；任一組湊不到就整組不輸出、改出資料需求，沒有交出建不起來的 RSA
-- [ ] 每則標題 ≤30 字元、每則說明 ≤90 字元——字元數依「雙倍寬度規則」計算（全形字算 2），不是純 Unicode 字元數，已標示計算後的數字
-- [ ] 否定關鍵字：已先數過「手上有幾則對得上實際字詞的證據」再照上方第 2 項的三種情況輸出＋寫缺口說明。**沒有列出推測的關鍵字，也沒有為了湊數而放寬「對得上實際字詞」這個判準**
-- [ ] 廣告群組結構已標註
-- [ ] 附加連結：已先數過「網站真的有幾個可用頁面」再照上方第 3 項的三種情況輸出。沒有編造網址、沒有用「頁面類型」佔位、也沒有把同一頁重複列成兩則
-- [ ] 額外資訊：已先數過「有幾則對得上官方載明條件的事實」再照上方第 4 項的三種情況輸出。**沒有把行銷形容詞（「品質保證」「專業團隊」）當成額外資訊湊數**
-- [ ] 結構化摘要：同類項目 ≥3 個才輸出一組（標題選自固定清單、值與標題語意相符）；<3 個時整項不輸出＋資料需求，**沒有混入不同類的項目湊到 3 個**
-- [ ] 每一則輸出都標了證據來源（哪份報告／哪個頁面／使用者哪句話）；寫不出來源的都沒有輸出
-- [ ] **附加連結標題與說明、額外資訊、結構化摘要的值、顯示路徑也逐則帶了來源三元組＋成品狀態**（共四個必填欄位），不是只有 RSA 標題說明有；這幾類的合規檢查跟標題說明一樣跑過，沒有因為「屬於設定面資產」而略過
-- [ ] **顯示路徑兩段是分開標的**（路徑1 一筆、路徑2 一筆），不是整組共用一筆；標不出來的那一段留空，沒有為了版面完整而湊一個沒有依據的路徑文字
-- [ ] **交付物裡沒有使用者原話、評論原文、貼文網址、來源頁面網址**；「依據：」寫的是來源類型＋`source_id`。唯一出現的網址是 RSA 最終網址與附加連結目標網址，且都是自家公開頁面、不帶 query 與 fragment
-- [ ] **每一則裡凡有 `public_cited` 的來源，都帶了 `cite:`（`attribution`）並隨交付物輸出**，缺的一則都沒有放行（全設成 `blocked_needs_permission`）；非 `public_cited` 的 `cite:` 留空，沒有為了欄位好看而填入原文或網址
-- [ ] 標題與說明**逐則**帶了三元組與 `publish_status`，不是整組共用一組；產品自身規格數字是 `A` 或 `E`，**社會證明與競品比較只接受 `E`**，沒有掛在 `B` 底下的數字或比較級
-- [ ] 若涉及醫療／醫美：每則標題與說明**以及每則附加連結、額外資訊、結構化摘要的值**都跑過兩關——①內容落在醫療法第 85 條第 1 項某一款或第 6 款公告容許事項（沒有療效宣稱、術前術後對比、他人見證）②沒有第 86 條禁止的最高級／保證療效用詞。兩關獨立，不是過了一關就算數
-- [ ] 若涉及保健食品／化妝品／藥品：沒有醫療效能字詞與誇大宣稱，需要地理修飾詞的位置已加上，語言為繁體中文
-- [ ] 已提醒使用者交付前務必用 Google Ads 後台實測字元數（不是只信本檔的人工計算）
+- [ ] **Headlines and descriptions came from `ad-creative`**, not written directly in `ads` — this skill does spec and compliance review
+- [ ] Each RSA's headline/description count is driven by actual evidence (target 15/4, reduced with a gap note when short), **with no unsupported variant or reworded duplicate padded in to hit the target**
+- [ ] **Every RSA has at least 3 headlines and 2 descriptions** (Google's minimum to create one); any RSA that can't clear that isn't output — a data request instead, never an unbuildable RSA delivered as one
+- [ ] Every headline ≤30 chars, every description ≤90 chars — counted with the double-width rule (full-width = 2), not plain Unicode length, and the computed count is shown
+- [ ] Negative keywords: counted "how many terms actually match real search terms" first, then output per the three tiers above with a gap note. **No speculative keyword listed, and the "matches a real term" bar wasn't loosened to pad the count**
+- [ ] Ad group structure is labeled
+- [ ] Sitelinks: counted "how many real usable pages the site has" first, then output per the three tiers. No fabricated URL, no "page type" placeholder, no page listed twice under different titles
+- [ ] Callouts: counted "how many facts match published terms" first, then output per the three tiers. **No marketing adjective ("guaranteed quality," "professional team") padded in as a callout**
+- [ ] Structured snippet: only output when ≥3 same-category items exist (header from the fixed list, semantically matching the values); <3 → don't output + data request, **no mixed-category padding to reach 3**
+- [ ] Every output line states its source (which report, which page, which user statement); a line with no citable source wasn't output
+- [ ] **Sitelink titles/descriptions, callouts, structured-snippet values, and display paths all carry the source triple + product status + per-claim `claimN`** too, not just RSA headlines/descriptions — the same compliance check ran on these, not skipped for being "settings-layer assets"
+- [ ] **Both display-path segments are tagged separately** (path 1 one entry, path 2 another), not shared; an unsupported segment is left blank rather than padded with an unsupported text
+- [ ] **No user's own words, review text, post URL, or source-page URL anywhere in the deliverable**; "based on:" states source type + `source_id`. The only URLs present are the RSA final URL and sitelink target URLs, both the client's own public pages, no query string or fragment
+- [ ] **Every line whose source carries `public_cited` has `cite:` (`attribution`) shipped with it**; none of those were let through without it (all set to `blocked_needs_permission`); non-`public_cited` `cite:` stays blank, never filled with raw text or a URL for appearance
+- [ ] **Every line binds each of its claims with `claimN="claim" ← source @locator`** — a single-claim line still writes `claim1`; **a multi-source claim chains with `+` on the same `claimN`, never split into separate `claimN`s**; **any claim missing a complete mapping (source + locator) blocks that line** (`blocked_unsupported_claim`) — the triple and `publish_status` being present doesn't count as passing, and the semicolon-separated flat list isn't a valid substitute
+- [ ] Headlines and descriptions carry the triple, `publish_status`, and per-claim `claimN` **per line**, not shared across the group; product spec figures are `A` or `E`, **social proof and competitive comparisons are `E` only**, no comparison or social-proof number hung on a `B`
+- [ ] Medical/aesthetic involved: every headline, description, sitelink, callout, and structured-snippet value passed the loaded GEO module's checks — both/all of that module's independent checks, not just one
+- [ ] Supplement/cosmetic/pharmaceutical involved: no medical-efficacy term, no exaggerated claim, geographic modifier added where relevant, copy in the target locale
+- [ ] User has been reminded to verify character counts in the actual Google Ads UI before delivery — not relying solely on this file's manual calculation
 
-任一項沒過，回覆前先重寫。不要輸出不完整的 RSA。
+Any item failing → rewrite before replying. Don't ship an incomplete RSA.

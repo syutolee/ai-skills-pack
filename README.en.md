@@ -1,75 +1,61 @@
-# AI Marketing Skills Pack (Taiwan Localization)
+# AI Ad Skills Pack v2 (Free Tier) — syutolee.com
 
 *[繁體中文版](README.md)*
 
-A marketing skills pack that Claude Code and similar agent tools can load directly. Conforms to the Agent Skills spec. Deeply localized adaptation of [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) (MIT) — **not a translation**. Platform choices, case studies, regulatory context, and measurement constraints have all been replaced with what a media buyer actually runs into in Taiwan. See `LICENSE` for licensing, and each skill's `NOTICE.md` for its exact source and adaptation notes.
+An Agent Skills pack for running digital advertising with an AI agent, conforming to the [Agent Skills spec](https://agentskills.io/specification.md). Works with Claude Code and any other host that supports the spec. English content throughout, with per-market GEO reference modules (Taiwan at launch). Part of this content is a deep localization of [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) (MIT), carried forward through this package's own v1. Full source chain in `NOTICE.md`, license in `LICENSE`.
 
-## How the skills are split
+## What this pack does
 
-Skill boundaries follow the **top-down dependency chain of marketing knowledge**, not "tool function":
+An asset layer for running digital ads. Paste a product or storefront URL, and the agent scans the homepage, writes a starting `profile.md`, and produces a few unverified angle candidates. From there it splits into two lines: a **strategy line** (set the angle, launch, produce creative) and a **data line** (check whether tracking is healthy, judge from the numbers whether spend is still justified).
 
 ```
-        ┌─────────────────────────────────────────────┐
-        │  1. tracking-health                          │  ← horizontal foundation
-        │     every layer's judgment depends on         │
-        │     whether these numbers can be trusted      │
-        └─────────────────────────────────────────────┘
-
-  2. quick-angle (fast positioning)
-     no research, no validation — just organizes your answers to three
-     questions into a positioning doc the downstream skills can read
-                  ↓
-   ┌──────────────┼──────────────┐
-   ↓              ↓              ↓
- 3a. ad-creative  3b. landing-   3c. ads
-   (ad creative)   page-cro       (campaign setup)
-                  (landing page
-                   CRO)
-   └──────────────┼──────────────┘
-                  ↓
-  4. campaign-analysis-iteration (performance analysis & iteration calls)
+kickoff (scan URL) → quick-angle (positioning)
+                        │
+          ┌─────────────┴─────────────┐
+          ↓                           ↓
+    ads + ad-creative           tracking-health
+    (platform / budget /        (setup, debug,
+     audience / copy /           privacy compliance)
+     visual spec)
+          │                           │
+          └─────────────┬─────────────┘
+                        ↓
+              campaign-analysis
+        (absolute stop-loss judgment)
+                        │
+                        └──→ verdict feeds back into ads / ad-creative, loop continues
 ```
 
-For each layer's boundaries, how they hand off, and exactly what degrades when no positioning doc is present, see [`ROADMAP.md`](ROADMAP.md).
+## The six free-tier skills
 
-## The six skills in this pack
+| Skill | Owns |
+|---|---|
+| `kickoff` | Static scan of a product URL, writes a starting `profile.md` and 2-3 unverified angle candidates |
+| `quick-angle` | Three questions (who / why you win / against whom), writes `.agents/positioning.md` |
+| `ads` | Platform choice, account structure, budget, audience, compliance review. Advisory only, never touches a live account |
+| `ad-creative` | Angle, copy, visual spec: headlines, body copy, static-ad concepts |
+| `tracking-health` | Checks whether tracking is broken: verify, debug, fix (GA4/GTM/pixels/UTM) |
+| `campaign-analysis` | Absolute stop-loss judgment: is this burning money past the point where you should stop |
 
-| Skill | Owns | Explicitly does not own |
-|---|---|---|
-| **tracking-health** | Setting up, auditing, and debugging tracking & measurement; PII-leak protection; attribution limits | — |
-| **quick-angle** | Asks three questions (who you're targeting, why you win, who you're compared against), writes a 10-20 line positioning doc for downstream skills | Market research, validating whether the claims hold up, producing multiple candidate angles |
-| **ads** | Platform selection, account structure, budget allocation, audience setup, Taiwan ad-compliance checks | Performance judgment (→ 4), creative production (→ 3a), account execution (does not execute) |
-| **ad-creative** | Defining angles, copywriting, static concept generation, creative capacity planning | Performance analysis and win/lose judgment (→ 4) |
-| **landing-page-cro** | Diagnoses landing pages with the LIFT six-factor model; message-match check | Statistical significance testing (→ ab-testing, not included) |
-| **campaign-analysis-iteration** | Deciding whether to continue from data — kill/keep/scale, whether to swap creative | Producing creative, changing settings, operating accounts |
-
-**Every skill follows the "lightweight routing entry point (`SKILL.md`) + topical `references/`" progressive-disclosure structure**: `SKILL.md` only holds the role definition, scope boundaries, hard rules, and a routing table; the actual thresholds, checklists, and templates live in `references/` and load on demand.
-
-## Works without a positioning doc
-
-The three tactical skills (`ads` / `ad-creative` / `landing-page-cro`) each check, before starting, whether the project has a positioning / value-proposition document:
-
-- **Found** → reads it first and uses it as the baseline
-- **Not found** → **still proceeds**, but explicitly discloses "this is a generic execution recommendation with no strategic basis," and explains which layer of judgment is missing
-
-This is a **soft nudge, not a hard gate**. No skill refuses to work just because you don't have a positioning doc, but none of them will pretend you do either.
-
-When you don't have a positioning doc handy, `quick-angle` (included in this pack) asks three questions and writes the answers into `.agents/positioning.md`, which the three tactical skills above can then read. It does no market research and doesn't validate whether the answers hold up — it only turns your answers into a file the downstream skills can read, and the file it writes says so explicitly.
+These six skills together complete the whole loop, scan, set the angle, launch, produce creative, check tracking, catch a burning campaign. None of them stalls just because a paid module is missing; each one's own `SKILL.md` states its degrade behavior.
 
 ## Installation
 
-Drop the skill directories under `ai-skills-pack/` into your agent environment's skills directory (for Claude Code, that's `~/.claude/skills/` or the project's `.claude/skills/`), one directory per skill. The `name` field in each `SKILL.md`'s frontmatter must match the directory it lives in.
+Clone this repo, or download and unzip it, then drop the skill directories into your agent host's skills directory:
 
-**Installing the whole pack together is recommended.** The skills cross-reference each other (for example, `ad-creative` **force-loads** `ads`'s Taiwan ad-compliance reference file when producing creative for a regulated industry); installing only one skill means the parts it can't read fall back to their own degradation handling, but functionality will be limited — for regulated-industry creative, missing the compliance file means only a skeleton flagged for manual review gets output. That's a deliberate fail-closed behavior, not a bug.
+```
+git clone https://github.com/syutolee/ai-skills-pack.git
+```
 
-## Principles that run through this pack
+- **Claude Code**: `~/.claude/skills/` (user-wide) or the project's `.claude/skills/`
+- **Any other Agent Skills spec host**: `.agents/skills/`
 
-1. **Don't fabricate** — if there's no data, say so, and state what data is needed to produce the output; don't guess to make it look complete
-2. **"Wait and see" and "it doesn't work" are two different conclusions** — don't call it ineffective just because the sample size is insufficient
-3. **If you can't measure it, say you can't measure it** — closed e-commerce platforms' in-platform attribution, actual LINE friend-add counts — if a seller can't get the number, don't pretend the report has it
-4. **Regulatory sections cite the actual statute and a verification date, and explicitly say this is not legal advice** — have your client's legal or compliance contact review before actually launching
-5. **Never promise clients a specific multiple of performance lift** — say "worth testing," not "guaranteed to work"
+Keep `contracts/`, `shared/`, and the six skill directories at the same level, not nested inside one another. Each `SKILL.md`'s frontmatter `name` must match the directory it lives in. Installing the whole set is recommended: the skills check for each other, and fall back to their own degrade branch with reduced functionality when a sibling is missing.
+
+## Paid tier
+
+A separate paid set of modules is available, covering comparative performance verdicts, landing-page diagnosis, tracking architecture design, structured experiment design, and creative rendering. Details and inquiries: [syutolee.com](https://syutolee.com).
 
 ## License
 
-MIT. The `LICENSE` file contains two copyright notices: **Copyright (c) 2025 Corey Haines** (the upstream `coreyhaines31/marketingskills` project, retained per the MIT terms as required for adaptations; **this includes the "headline mirroring" section of `landing-page-cro`**, which is adapted from the original `ads/SKILL.md`) and **Copyright (c) 2026 syutolee.com** (the localized-adaptation content of four skills, all of `quick-angle`, the original content of `landing-page-cro` other than "headline mirroring," all newly written or rewritten passages across the reference files, and the README/ROADMAP/each `NOTICE.md`). Both are released under MIT. See each skill's `NOTICE.md` for its exact source, pinned version, and nature of adaptation.
+MIT. `LICENSE` carries two notices: **Copyright (c) 2025 Corey Haines** (upstream `coreyhaines31/marketingskills`, retained per the MIT terms) and **Copyright (c) 2026 syutolee.com** (this package's original content and its English rewrite/restructuring). Per-file source and adaptation notes: `NOTICE.md`.

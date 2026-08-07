@@ -1,14 +1,14 @@
-# GTM 結構、UTM 策略與台灣的歸因限制
+# GTM structure, UTM strategy, and closed-marketplace attribution limits
 
-## Google Tag Manager 容器結構
+## Google Tag Manager container structure
 
-| 元件 | 用途 |
-|------|------|
-| 代碼（Tags） | 實際執行的程式碼（GA4、Pixel、LINE Tag） |
-| 觸發條件（Triggers） | 代碼何時觸發（頁面瀏覽、點擊） |
-| 變數（Variables） | 動態值（點擊文字、Data Layer、自訂 JavaScript） |
+| Component | Purpose |
+|---|---|
+| Tags | The code that actually runs (GA4, Pixel, a regional platform's tag) |
+| Triggers | When a tag fires (page view, click) |
+| Variables | Dynamic values (click text, dataLayer, custom JavaScript) |
 
-### Data Layer 模式
+### dataLayer pattern
 
 ```javascript
 dataLayer.push({
@@ -18,52 +18,45 @@ dataLayer.push({
 });
 ```
 
-GTM 的自訂 JavaScript 變數常被用來做 `page_location` 覆寫，**順序陷阱與正確做法見 [url-pii-protection.md](url-pii-protection.md) 的防護做法 4**。
+GTM custom-JavaScript variables are commonly used to override `page_location` — **the sequencing trap and the correct approach are in [url-pii-protection.md](url-pii-protection.md), protection layer 4**.
 
-## UTM 參數策略
+## UTM parameter strategy
 
-| 參數 | 用途 | 範例 |
-|------|------|------|
-| utm_source | 流量來源 | google, line_oa, newsletter |
-| utm_medium | 行銷媒介 | cpc, email, social |
-| utm_campaign | 活動名稱 | spring_sale |
-| utm_content | 區分版本 | hero_cta |
-| utm_term | 付費搜尋關鍵字 | running+shoes |
+| Parameter | Purpose | Example |
+|---|---|---|
+| `utm_source` | Traffic source | `google`, `newsletter` |
+| `utm_medium` | Marketing channel | `cpc`, `email`, `social` |
+| `utm_campaign` | Campaign name | `spring_sale` |
+| `utm_content` | Version differentiator | `hero_cta` |
+| `utm_term` | Paid-search keyword | `running+shoes` |
 
-命名規則：全部小寫、一致使用底線或連字號、具體但簡潔（`blog_footer_cta` 不要用 `cta1`）、所有 UTM 記錄在共用表單裡。**這份共用表單同時是 [url-pii-protection.md](url-pii-protection.md) 講的「活動代碼登錄清單」**——GTM 白名單要拿它做精確比對，兩件事共用同一份資料，不要各維護一份。
+Naming rule: all lowercase, consistently hyphenated or underscored, specific but concise (`blog_footer_cta`, not `cta1`), every UTM logged in a shared registry. **This shared registry is the same "campaign-code registry" [url-pii-protection.md](url-pii-protection.md) uses for GTM allowlist exact-matching** — the two share one dataset, don't maintain a second copy.
 
-### 台灣情境下的常見組合
+## Closed marketplace platforms: structural limits (a UTM parameter alone produces no data you can query)
 
-```
-utm_source=line_oa&utm_medium=push&utm_campaign=2026q1_newuser
-utm_source=meta&utm_medium=cpc&utm_campaign=shopee_traffic&utm_content=static_v1
-```
+Closed marketplace platforms don't let sellers install their own GA4/GTM tags — only the platform's own back-end reports are visible. **"UTM tracks traffic into the marketplace" doesn't hold** — a UTM is just a parameter riding on a URL; **producing any queryable tracking data requires an analytics tool at the destination reading and logging it**. On a closed platform, the seller has no access to what UTM their own storefront URL carried, so **there is no attribution data available to the seller at all** — this isn't "attribution is a bit coarse," it's a structural absence.
 
-## 封閉電商平台的結構性限制（UTM 本身不會產生「你查得到」的追蹤資料）
+**But be precise: the parameter doesn't "vanish."** The query string still travels with the HTTP request all the way to the destination; the servers, CDN, WAF, reverse proxies, and access logs along the way may well log the full URL, and the platform itself can see it. The difference is **access**, not existence. This matters because it cuts the other way too: **don't put sensitive content into an outbound link's URL just because "the UTM disappears anyway"** — it doesn't disappear, it just flows into logs you don't control.
 
-蝦皮、MOMO 這類站內購物平台不允許賣家安裝自己的 GA4／GTM 代碼，只能看平台後台提供的報表。**「UTM 能追蹤導流到站內這一段」這個說法不成立**——UTM 只是掛在網址後面的參數，**要有分析工具在目的地讀取、記錄它，才會產生任何可查詢的追蹤資料**；蝦皮、MOMO 是封閉平台，賣家沒有管道讀取自己站內網址帶了什麼 UTM，所以**對賣家而言沒有任何歸因資料可用**，這不是「訂單歸因比較粗略」的程度。
+### Three approaches that actually produce queryable data
 
-**但要講精確：參數並不是「憑空消失」，只是你拿不到。** 網址帶著的 query 會照樣隨 HTTP 請求送達目的地，沿途與終點的伺服器、CDN、WAF、反向代理與各層存取日誌都可能記錄完整網址，平台自己也看得到。差別在於**存取權**，不是這段資料是否存在。這個區別很重要，因為它同時決定了另一件事：**不要因為「反正 UTM 會消失」就把任何敏感內容放進導外連結的網址**——那些內容不會消失，只是流進了你管不到的日誌裡。
+1. **A mechanism the platform officially supports**: an affiliate/referral link program, a platform-issued campaign code — these are attribution methods the platform itself recognizes and reports numbers back on
+2. **A redirect service you control that logs the click**: log the click once, then forward to the marketplace (gives a click count, not whether the visit converted)
+3. **Send to your own landing page first** (which can run GA4/Pixel), with a button forwarding to the marketplace listing — at least the landing-page interaction is trackable
 
-### 實際能拿到可查詢資料的三種做法
+**Without any of the three, the only honest numbers to report are the ad platform's own click, impression, and spend figures** — claiming "this drove X visits to the store" has no data behind it. This is a structural gap between marketplace sellers and businesses running their own site, and it needs to be explained plainly at delivery time.
 
-1. **平台官方支援的機制**：蝦皮聯盟行銷分潤連結、MOMO 活動代碼等——這些是平台認帳、你事後查得到數字的追蹤方式
-2. **自己能控制、會記錄點擊的中繼轉址服務**：先記一次點擊再轉去蝦皮／MOMO（只能算出點擊數，看不到進站後有沒有買）
-3. **先導去自有落地頁**（可以裝 GA4／Pixel），落地頁上放前往蝦皮／MOMO 購買的按鈕，至少落地頁互動可追蹤
+### Approach 2's (self-built redirect) three mandatory safeguards
 
-**三種都沒做的話，能誠實報告的只有廣告平台自己回報的點擊、曝光、花費數字**，不能宣稱「導了多少流量進站」——那是沒有資料根據的說法。這是台灣電商代操跟自有官網電商在歸因能力上的結構性落差，報表交付時要跟客戶說明清楚。
+Not just a tracking configuration — skipping any one of these hands the client an open vulnerability:
 
-### 做法 2（自建中繼轉址）的三項必做防護
+- **Destination fixed to a backend-maintained allowlist, to block open redirect**: the redirect target can only come from a backend allowlist (domains, full URLs, or an internal short-code mapping). **Never accept an arbitrary URL from the query string and redirect to it blindly** (`shortdomain/go?url=...`) — that's a ready-made phishing vector where the victim sees a trusted domain, and search engines and ad platforms may flag it as abuse. Compare against the **fully resolved domain**, never `startsWith` or substring containment (`https://marketplace.com.evil.example` would pass a substring check)
+- **Log only the minimum fields needed for counting**: a redirect service's logs (IP, User-Agent, Referer) count as potentially-identifying personal data under privacy law. Keep only what's genuinely needed for the click count (timestamp, short code, destination); truncate or drop IP entirely
+- **Set an explicit, short retention window**: e.g. auto-delete after 30 days, documented in the privacy policy's retention section
 
-這不是純粹的追蹤設定，缺一項就是給客戶開洞：
+## General attribution notes
 
-- **目的地固定 allowlist，杜絕 open redirect**：轉址目的地只能來自後端維護的允許清單（允許的網域／完整網址，或用內部短碼對應）。**絕對不要接受從 query 帶進來的任意網址就照轉**（`短網址網域/go?url=...`）——那會被拿去做釣魚，受害者看到的是客戶的可信網域；搜尋引擎與廣告平台也可能因此判定濫用。比對時要用**解析後的網域做完整比對**，不要用 `startsWith`／字串包含（`https://蝦皮.com.evil.example` 這種會過關）
-- **只保留計數需要的最少日誌欄位**：轉址服務為了計數會留下含 IP、User-Agent、Referer 的存取紀錄，在個資法底下要當成可能識別特定個人的資料處理。只留真正要用來算點擊數的欄位（時間、短碼、目的地），IP 建議截斷或直接不落地
-- **設定明確且盡量短的保留期限**：例如 30 天到期自動刪除，並把這件事寫進隱私權政策的資料保留段落
-
-## 歸因的一般注意事項
-
-- 平台自帶歸因通常偏高估
-- 一致使用 UTM 參數
-- 平台數據要跟 GA4 對照
-- 看混合 CAC（Blended CAC），不要只看單一平台的 CPA
+- Platform self-attribution tends to run high.
+- Use UTM parameters consistently.
+- Cross-check platform numbers against GA4.
+- Judge by blended CAC across all channels, not a single platform's CPA in isolation.

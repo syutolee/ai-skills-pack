@@ -1,108 +1,113 @@
-# 帳戶架構、命名與預算配置
+# Account structure, naming, and budget
 
-## 帳戶組織
+Dollar amounts below use NT$ as an illustrative currency (this pack's launch market); substitute the local currency for other markets.
 
-```
-帳戶
-├── 活動 1：[目標] - [受眾／商品]
-│   ├── 廣告群組 1：[受眾變化版本]
-│   │   ├── 廣告 1：[素材版本 A]
-│   │   ├── 廣告 2：[素材版本 B]
-│   │   └── 廣告 3：[素材版本 C]
-│   └── 廣告群組 2：[受眾變化版本]
-└── 活動 2...
-```
-
-**每一層各自管什麼，決定了後續哪一層的數字可以拿來做什麼判斷**——這件事在成效分析時是地基，層級搞錯會把結構問題誤判成素材問題。完整的三層定義與分析單位規則在 `campaign-analysis-iteration` 技能的 `references/kill-keep-scale.md`。設定帳戶時先記住一件事：**預算與受眾設在廣告組合層（開 CBO 時預算在活動層），素材設在廣告層**，這決定了之後「平台把錢分給誰」這個問題的分析單位。
-
-## 命名規則
+## Account organization
 
 ```
-[平台]_[目標]_[受眾]_[優惠]_[日期]
-
-範例：
-META_轉換_類似受眾-老客戶_限時折扣_2026Q1
-GOOG_搜尋_品牌字_預約諮詢_常態
-LAP_導流_LINE好友_蝦皮導購_2026Mar
+Account
+├── Campaign 1: [objective] - [audience/product]
+│   ├── Ad set 1: [audience variant]
+│   │   ├── Ad 1: [creative variant A]
+│   │   ├── Ad 2: [creative variant B]
+│   │   └── Ad 3: [creative variant C]
+│   └── Ad set 2: [audience variant]
+└── Campaign 2...
 ```
 
-命名不是美觀問題——**成效匯出時，如果只有活動名稱與人工命名欄位、沒有素材識別碼，就無法確定同一列代表同一個素材**（見 `campaign-analysis-iteration` 的「分析單位」）。一致的命名規則能讓匯出資料至少對得起來，但它**不能取代帶 `creative_id`／`asset_id` 的匯出**。
+**What each layer owns decides which numbers can be trusted for which judgment later** — this is foundational at performance-review time; getting the layer wrong turns a structural problem into a false creative verdict. Full three-layer definitions and analysis-unit rules belong to whichever skill does that comparative judgment (`campaign-analysis` and its paid comparative module, where installed). When setting up the account, remember one thing now: **budget and audience sit at the ad-set layer (or campaign layer under CBO), creative sits at the ad layer** — that split decides the analysis unit for "who did the platform actually give the budget to" later.
 
-## 預算配置
+## Naming convention
 
-**測試期（前 2-4 週）：**
-- 70% 給已驗證有效的活動
-- 30% 給新受眾／新素材測試
+```
+[platform]_[objective]_[audience]_[offer]_[date]
 
-**放大期：**
-- 資源集中在已驗證的贏家組合
-- 每次調升後等至少 3-5 天讓演算法重新學習
+Examples:
+META_conversion_lookalike-existing-customers_flash-sale_2026Q1
+GOOG_search_brand-terms_book-consult_always-on
+LAP_traffic_line-friends_shopee-referral_2026Mar
+```
 
-**兩活動結構（放大／測試分開，避免測試永遠餓死）**：同一受眾跑兩個 CBO 活動——放大活動約 80% 預算，只放已驗證的贏家；測試活動約 20% 預算，放新概念與迭代版本，有自己受保護的預算。原因：同一個 CBO 裡，含有贏家的那個廣告組合永遠會把預算吃光，新測試永遠拿不到足夠花費被判斷。**這個切分是預算保護，不是受眾切分。**
+Naming isn't cosmetic — **when a performance export only has the campaign name and a manual naming field with no creative identifier, there's no way to confirm two rows are the same creative** (see `campaign-analysis`'s "analysis unit"). A consistent naming convention keeps the export at least legible, but **it doesn't substitute for an export that carries `creative_id`/`asset_id`**.
 
-## 統一放大節奏（調升與調降是兩條不同的規則，不要混用）
+## Budget allocation
 
-- **調升（放大）**：目標調幅 **+20%**，單次絕對**不到 30%**，間隔至少 3-5 天再進行下一次。「+30% 以上單次調升會讓平台重置學習」這個經驗法則，最有把握的證據來自 **Meta 的 CBO／學習階段機制**；Google Ads 智慧出價、LINE 廣告平台、TikTok 各自也有類似「大幅調整會讓演算法重新學習」的機制，但實際的敏感幅度、天數、判定標準不是同一套，**不要直接把 Meta 驗證過的 30% 套到其他平台當保證值**——先用小幅度測試觀察
-- **調降（緊急止血）**：完全不同的動作，**不套用「單次不到 30%」那條為調升設計的規則**——可以一次降 20-30% 止血，降完穩定 2 週、之後改用每週 +10% 慢速恢復（恢復動作才回頭套用上面的調升節奏）。**但不要說成「調降不會觸發重新學習」——那句話講太滿了**：平台的學習階段是由「這個廣告組合有沒有發生重大編輯」觸發的，預算大幅變動（含調降）同樣可能被判定為重大編輯而重新進入學習；只是**緊急止血的情境下，接受重新學習的風險通常比繼續照原預算燒錢划算**，這是取捨判斷不是免死金牌。實務建議：能分次降到位就分次降；一次降 20-30% 之後，把後續 3-7 天的成效波動預設成「可能混有重新學習的影響」，不要立刻拿這幾天的數字去做關閉門檻／留判斷
+**Testing phase (first 2-4 weeks):**
+- 70% to already-validated campaigns
+- 30% to new audience/creative testing
 
-**什麼時候該調升、什麼時候該調降，屬於成效判斷**，門檻與觸發條件在 `campaign-analysis-iteration` 技能。這份檔案只回答「決定要調的時候，該調多少、多久調一次」。
+**Scaling phase:**
+- Concentrate resources on validated winning combinations
+- Wait at least 3-5 days after each budget increase for the algorithm to relearn
 
-## 廣告數量與餵養能力
+**Two-campaign structure (keep scale and test separate so testing never starves):** run two CBO campaigns against the same audience — a scale campaign at ~80% of budget carrying only validated winners, and a test campaign at ~20% with its own protected budget for new concepts and iterations. Reason: inside a single CBO, whichever ad set already has a winner will always absorb the budget, so a new test never accumulates enough spend to be judged. **This split is budget protection, not audience segmentation.**
 
-活躍廣告數超過預算能餵飽的數量 = 每支廣告都吃不飽，沒有一支能被公平判斷。
+## Scaling pace (increases and decreases are two different rules — don't mix them)
 
-**設定帳戶時先算，不要直接套 6-10 支——但先確認這個活動算不算得出來。**
+- **Increase (scale up):** target increment **+20%**, never more than **30%** in a single step, at least 3-5 days between increases. The strongest evidence behind "a single increase over 30% resets the platform's learning" comes from **Meta's CBO/learning-phase mechanism**; Google Ads Smart Bidding, LINE Ads Platform, and TikTok each have a similar "large adjustments retrigger learning" behavior, but the actual sensitivity threshold, day count, and criteria aren't identical across platforms — **don't carry Meta's validated 30% over to another platform as a guarantee**; test with small increments and observe first
+- **Decrease (emergency stop-loss):** a different move entirely, **the "never more than 30% in one step" rule above doesn't apply here** — a single 20-30% cut to stop the bleeding is fine; hold 2 weeks after the cut, then resume with a slow +10%/week recovery (recovery reuses the scale-up pacing above). **But don't claim a decrease never retriggers learning** — that overstates it: the platform's learning phase is triggered by "did this ad set have a significant edit," and a large budget change, including a decrease, can count as one; it's just that **in a stop-loss situation, accepting the relearning risk is usually cheaper than continuing to burn spend at the original budget** — a tradeoff, not a free pass. Practical guidance: cut in steps where possible; after a 20-30% cut, treat the following 3-7 days of results as possibly mixed with relearning noise, and don't use those days alone for a stop-loss/keep decision
 
-公式的本質是「14 天內每支廣告要能累積到 2 倍的目標單次轉換成本」，所以**前提是這個活動有一個明確定義的目標單次轉換成本**。**本節是這個公式唯一的正本**（`campaign-analysis-iteration` 的 [`kill-keep-scale.md`](../../campaign-analysis-iteration/references/kill-keep-scale.md)「廣告數量上限」只做單向連結指回這裡，不重複維護）。TCPL（合格名單目標成本）是名單型活動的版本，最早在 Meta 名單型活動的脈絡下定義。**其他活動目標要先對號入座**：
+**When to increase or decrease is a performance judgment, made in `campaign-analysis-pro`.** This file only answers "once you've decided to adjust, by how much and how often."
 
-| 活動目標 | 代入公式的成本值 | 適用嗎 |
+## Ad count and feeding capacity
+
+More active ads than the budget can feed = every ad starves, none of them can be judged fairly.
+
+**Calculate this when setting up the account — don't default to 6-10 without confirming the campaign can even compute the number.**
+
+The formula's core is "each ad needs to accumulate 2x its target cost-per-conversion within 14 days," so **the precondition is a clearly defined target cost-per-conversion for this campaign.** TCPL (target cost per qualified lead) is the lead-gen version, originally defined in the context of Meta lead-gen campaigns. **Other campaign objectives need to be mapped first:**
+
+| Campaign objective | Cost value substituted into the formula | Applies? |
 |---|---|---|
-| 名單／表單（Meta 合格名單、Google 潛在客戶開發） | **TCPL**（合格名單目標成本） | 適用，這是公式的原始情境 |
-| 銷售／購買 | **目標 CPA**（每筆訂單目標成本）。只有 ROAS 目標時先換算，換算前**必須先把 ROAS 正規化成倍數**，見下方「ROAS 單位正規化」 | 適用 |
-| App 安裝 | **目標 CPI** | 適用 |
-| 品牌認知、觸及、影片觀看等**沒有轉換事件**的目標 | 無 | **不適用，不要硬套一個假的 TCPL**。這類活動不靠轉換數判斷素材，同時測幾支的限制改看平台的最佳化事件量（例如 Meta 學習階段所需的每週最佳化事件數）與可用預算，並在交付時寫明「這檔的素材結論屬觀察性，不會有轉換層的贏輸判定」 |
+| Lead/form (Meta qualified leads, Google lead gen) | **TCPL** (target cost per qualified lead) | Yes — the formula's original context |
+| Sales/purchase | **Target CPA** (target cost per order). ROAS-only targets need converting first — **normalize ROAS to a multiple before dividing**, see below | Yes |
+| App install | **Target CPI** | Yes |
+| Awareness, reach, video views, or other objectives **with no conversion event** | None | **Doesn't apply — don't force a fake TCPL onto it.** This objective class isn't judged by conversion count; how many creatives can run concurrently is instead bounded by the platform's optimization-event volume needs (e.g. Meta's weekly optimization-event minimum for the learning phase) and available budget. State plainly that any creative conclusion here is observational, with no conversion-level win/lose verdict |
 
-### ROAS 單位正規化（做除法之前一定要先做這一步）
+### ROAS unit normalization (do this before dividing, always)
 
-**目標 ROAS 的常見寫法有三種單位，直接代進公式會差 100 倍。** `400%` 當成 `400` 代入，會把正確的「客單價 ÷ 4」算成「客單價 ÷ 400」，目標 CPA 從 NT$500 變成 NT$5，接著算出來的廣告數上限會**高估 100 倍**，整個帳戶結構建議全錯。
+**A target ROAS gets written in three different units, and plugging the wrong one into the formula produces a 100x error.** Treating `400%` as `400` turns the correct "average order value ÷ 4" into "÷ 400" — target CPA drops from NT$500 to NT$5, and the resulting ad-count ceiling comes out **100x too high**, invalidating the whole account structure recommendation.
 
-| 使用者寫的 | 正規化後代入公式的值 |
+| What the user wrote | Normalized value to substitute |
 |---|---|
-| `400%`、`400 %`（帶百分號） | `4.0` （除以 100） |
-| `4x`、`4X`、`4 倍`（帶倍數單位） | `4.0` |
-| `4`、`15`、`400`（純數字，**沒有任何單位**） | **不可自行判定，一律先問** |
+| `400%`, `400 %` (with a percent sign) | `4.0` (divide by 100) |
+| `4x`, `4X`, `4 times` (with a multiple unit) | `4.0` |
+| `4`, `15`, `400` (a bare number, **no unit at all**) | **Can't be inferred — always ask** |
 
-- **純數字沒有單位時：fail-closed，一律回問，不准用任何猜測規則往下算。** 舊版寫「值 `≥ 20` 當百分比、`< 20` 當倍數」，這條門檻本身是猜的：`4` 可以是 4 倍也可以是 4%（電商大盤常見的廣告費佔營收比反推），`15` 同理。猜錯的方向剛好是最貴的方向——把 `4%` 當成 `4` 倍，目標 CPA 會高估 100 倍，帳戶結構建議全錯而且不會有任何症狀提醒你。**沒有例外分支，值大小不影響這條規則。**
-  - 回問的話術：「你寫的目標 ROAS 是 `4`，這是指**花 1 元換回 4 元營收（4 倍）**，還是**廣告費佔營收 4%**？兩種算出來的目標 CPA 差 100 倍，我不猜。」
-  - 使用者確認之前，**這個活動的廣告數上限、目標 CPA 一概不輸出**（不是輸出一個標註「待確認」的數字——標註會被下游忽略）
-- **正規化後的合理範圍是 `0.5`–`20`**。落在範圍外、或字串解析不出數字（`「四百」`、`ROAS 高一點`、空值）→ **不要猜，停下來問**，不要用一個猜的值往下算
-- **範圍檢查不能取代單位確認**：`4` 落在合理範圍內，但它落在範圍內這件事完全不能證明它的單位是倍數——兩道關卡各檢查一件事，都要過
+- **A bare number with no unit: fail closed, always ask back, never guess.** An earlier rule said "≥20 treat as a percentage, <20 treat as a multiple" — that threshold was itself a guess: `4` could mean 4x or 4% (a plausible ad-spend-to-revenue ratio at ecommerce scale), same for `15`. Guessing wrong runs in the expensive direction — treating `4%` as `4x` overstates target CPA by 100x with no symptom to flag it. **No exception based on the value's size.**
+  - Ask like this: "You wrote a target ROAS of `4` — is that **$1 spent returns $4 in revenue (4x)**, or **ad spend is 4% of revenue**? These produce target CPAs 100x apart, so I won't guess."
+  - Until confirmed: **don't output an ad-count ceiling or target CPA for this campaign at all** — not even a number flagged "pending," since a flagged number still gets used downstream
+- **Normalized value's reasonable range is `0.5`–`20`.** Outside that range, or a string that doesn't parse as a number (`"four hundred"`, `"a decent ROAS"`, blank) → **don't guess, ask** rather than proceeding on an assumed value
+- **The range check doesn't replace the unit confirmation**: `4` sitting inside the reasonable range proves nothing about whether its unit is a multiple — the two checks each test something different, both are required
 
-正規化完成之後：
-
-```
-目標 CPA = 平均客單價 ÷ 正規化後的目標 ROAS（倍數）
-```
-
-例：平均客單價 NT$2,000、目標 ROAS `400%` → 正規化為 `4.0` → 目標 CPA = 2000 ÷ 4 = **NT$500**（不是 NT$5）。
-
-### 廣告數上限公式
-
-對得上號、有成本值可代之後才算。**三步驟，每一步都有唯一確定的整數結果**：
+Once normalized:
 
 ```
-步驟 1：餵養額度 = (活動每日預算 × 14) ÷ (2 × 目標單次轉換成本)     ← 可能是小數
-步驟 2：活躍廣告總數上限 = floor(餵養額度)                          ← 無條件捨去成整數
-步驟 3：起始廣告數 = min(上限, 10)
-        但這個活動目前已驗證贏家 ≤ 2 支時 → min(上限, 6)
+target CPA = average order value ÷ normalized target ROAS (as a multiple)
 ```
 
-**為什麼要分「10」與「6」兩個起手數，判斷條件是什麼**：多開的位子減掉已驗證贏家就是測試位。已驗證贏家 ≥ 3 支（過去 90 天達標且現在還在跑）時開到 10 支，測試位約 7 個、預算有贏家在撐；贏家 ≤ 2 支時整個活動幾乎都是測試位，開 10 支等於每支只拿到十分之一預算，全部撐不到判斷門檻，所以壓到 6 支。**「6-10 支」不是可執行的答案，任何時候都要輸出一個確定的整數。**
+Example: average order value NT$2,000, target ROAS `400%` → normalized to `4.0` → target CPA = 2000 ÷ 4 = **NT$500** (not NT$5).
 
-分支（以步驟 2 的整數上限為準）：
+### Ad-count ceiling formula
 
-- **上限 ≥ 10** → 起始 10 支（贏家 ≥3 支時）或 6 支（贏家 ≤2 支時）。例：餵養額度 10.1 → 上限 10
-- **上限 1-9** → **以上限為準**，不再套 6 或 10。例：每日 NT$1,500、TCPL NT$3,000 → 餵養額度 3.5 → 上限 3 → 最多跑 3 支；每日 NT$500、TCPL NT$3,000 → 餵養額度 1.17 → 上限 1 → **只跑 1 支**（餵得起 1 支，但這種預算不要做素材測試，測不出東西）
-- **上限 = 0**（餵養額度 <1）→ **回報預算不足，不要建議跑任何測試結構**。例：每日 NT$300、TCPL NT$3,000 → 餵養額度 0.7 → 上限 0，連一支都餵不飽。這種情況要講的是「這個預算下不會產生可判斷的素材結論」與提高預算的門檻值，處理方式見 `kill-keep-scale.md` 同一節
+Only compute once the objective maps to a cost value above. **Three steps, each with a single deterministic integer result:**
 
-到上限時要上新測試就得先讓一支觸發關閉門檻。
+```
+Step 1: feed budget  = (campaign daily budget × 14) ÷ (2 × target cost-per-conversion)   ← may be a fraction
+Step 2: max active ad count = floor(feed budget)                                          ← round down to an integer
+Step 3: starting ad count   = min(ceiling, 10)
+        but if this campaign currently has ≤2 validated winners → min(ceiling, 6)
+```
+
+**Why two starting counts (10 vs. 6), and the condition that decides which:** the extra slots beyond validated winners are test slots. ≥3 validated winners (met target in the past 90 days and still running) → open to 10, roughly 7 test slots, budget has a winner to lean on. ≤2 validated winners → almost the whole campaign is test slots, so cap at 6. **"6-10" isn't an actionable answer — always output a single determined integer.**
+
+Branches (based on Step 2's integer ceiling):
+
+- **Ceiling ≥ 10** → start at 10 (≥3 winners) or 6 (≤2 winners). Example: feed budget 10.1 → ceiling 10
+- **Ceiling 1-9** → **use the ceiling as-is**, don't apply the 6/10 rule. Example: daily NT$1,500, TCPL NT$3,000 → feed budget 3.5 → ceiling 3 → run at most 3 ads; daily NT$500, TCPL NT$3,000 → feed budget 1.17 → ceiling 1 → **run only 1 ad** (feedable, but this budget isn't ready for creative testing)
+- **Ceiling = 0** (feed budget <1) → **report insufficient budget, don't recommend running any test structure.** Example: daily NT$300, TCPL NT$3,000 → feed budget 0.7 → ceiling 0, can't feed even one ad. State plainly that no judgeable creative conclusion is possible at this budget, and name the budget threshold that would change that
+
+To add a new test slot once at the ceiling, an existing ad has to hit its stop-loss threshold first.
+
+last_verified: 2026-08-06
+Source: this package's own v1 reference (`ai-skills-pack/ads/references/account-structure.md`), a practitioner starting-value table (budget splits, scaling pace, the ad-count ceiling formula's constants) — not an official platform policy, so there is no external URL to re-check against. Re-verify by re-deriving these against the account's own data, not by looking anything up; the Meta/Google/LAP/TikTok relearning-trigger behavior cited under "Scaling pace" is each platform's own mechanism and moves independently of this file, so confirm current behavior on the account before relying on the 30% figure there.

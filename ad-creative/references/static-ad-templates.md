@@ -1,292 +1,298 @@
-# 靜圖廣告版型庫
+# Static ad template library
 
-15 個靜圖（圖片）廣告的結構版型。每個都是有明確欄位的版面框架——結構已經驗證有效，填進去的內容才是你的品牌。在地化自原版 `static-ad-templates.md`，來源見 `../NOTICE.md`。
+15 structural templates for static (image) ads. Each is a layout frame with defined fields — the structure is already proven, what you fill in is the brand.
 
-規模化產出靜圖概念（Meta、Instagram、LinkedIn、聯播網）時使用這份版型庫。**在有資產可用的版型裡輪流使用，不要只集中在 2-3 個順手的**——版型多樣性就是角度多樣性，贏家通常不是你直覺會選的那個。
+Use this library when producing static concepts at scale (Meta, Instagram, LinkedIn, display network). **Rotate across every template that has assets available — don't cluster on 2-3 easy ones.** Template diversity is angle diversity; the winner usually isn't the one you'd instinctively reach for.
 
-## 版型資格 gate（產出前先跑，決定這一批能用哪些版型）
+## Eligibility gate (run before producing — decides which templates this batch can use)
 
-**「涵蓋全部 15 個版型」是產能配置的目標，不是硬性義務，而且它永遠不能凌駕合規要求。** 有幾個版型的成立條件不是文案寫得好不好，而是**品牌手上有沒有那項資產**——新品牌沒有真實評論、沒有取得授權的見證、沒有被媒體報導過，這些版型就沒有合法的填法。硬要湊滿 15 個，只會逼出捏造的評論、未授權的見證、或沒報導過的媒體 Logo，那是不實廣告與侵權，不是產能問題。
+**"Cover all 15 templates" is a capacity-allocation target, not an obligation, and it never outranks compliance.** Several templates are gated not by how well the copy is written but by **whether the brand actually holds the asset** — a new brand with no real reviews, no authorized testimonial, no press coverage simply has no legal way to fill those templates. Forcing all 15 only produces fabricated reviews, unauthorized testimonials, or an uncovered media logo — that's misleading advertising and infringement, not a capacity problem.
 
-產出一批概念前，先逐項確認資產，**不合格的版型直接跳過，不要用捏造或未授權的內容補位**：
+Before producing a batch, check assets item by item — **an ineligible template is skipped, never patched with fabricated or unauthorized content**:
 
-| 版型 | 成立所需的資產 | 登記簿裡要有的列 | 沒有的話 |
+| Template | Asset required | Registry row needed | If missing |
 |---|---|---|---|
-| 4. 評論卡 | 真實評論**＋**當事人可稽核的逐字引用授權 | `review-*`／`D`／`authorized_verbatim`，授權證明欄有值 | 跳過 |
-| 5. 見證疊排 | 三則真實見證**＋**當事人授權（含姓名／照片使用） | 每則見證一列（同上）＋每張人像一列 `testimonial-*`／`D`／`authorized_verbatim` | 跳過（不能改用「匿名見證卡」頂替，理由見該版型） |
-| 10. 媒體報導 | 真的報導過你的媒體**＋**該媒體的 Logo 使用條款允許 | 報導 `mediareport-*`／`F`／`public_cited`（`attribution` 有值）＋Logo `logo-*`／`F`／`licensed_logo`（授權證明欄指向條款檔） | 跳過 |
-| 3. 數據強調卡 | 真實可佐證的數字（案例研究、產品分析、問卷） | `casestudy-*`／`E`／依實際授權 | 跳過 |
-| 14. 競品點名 | 可佐證的具體差異事實**＋**平台政策允許點名 | `casestudy-*` 或 `mediareport-*`／**`E`**（`A` 撐不起競品比較） | 跳過 |
-| 8. 創辦人喊話 / 15. 起源故事 | 真實的創辦人／創業經過 | `productfact-*` 或 `visual-*`／`A`／`brand_owned`（含創辦人肖像那張） | 跳過 |
-| 其餘版型（1、2、6、7、9、11、12、13） | 產品事實與內部語彙研究即可 | `productfact-*`／`A`／`brand_owned`（＋視覺各自一列） | 通常可用 |
+| 4. Review card | A real review **+** subject-auditable verbatim-quote authorization | `review-*`/`D`/`authorized_verbatim`, authorization field non-blank | Skip |
+| 5. Testimonial stack | Three real testimonials **+** subject authorization (name/photo use) | One row per testimonial (as above) + one `testimonial-*`/`D`/`authorized_verbatim` row per portrait | Skip (can't substitute an "anonymous testimonial card" — see the template's own note for why) |
+| 10. Press mention | Real coverage **+** media logo usage rights | Coverage as `mediareport-*`/`F`/`public_cited` (`attribution` non-blank); **the logo element is a third-party visual, always `blocked_needs_permission` in this package — there's no registration path that passes it** | Skip (the logo element failing is this package's own capability boundary, not a batch-specific exception — third-party visual licensing is a separate scope) |
+| 3. Stat callout | A real, substantiable number (case study, product analysis, survey) | `casestudy-*`/`E`/matching license, or `positioning-*`/`E` (see [`grounded-inputs.md`](grounded-inputs.md)'s "Positioning file as source") | Skip |
+| 14. Competitor callout | A substantiable concrete difference **+** the platform allows naming competitors | `casestudy-*` or `mediareport-*`/**`E`** (`A` can't support a competitive comparison), or `positioning-*`/`E` | Skip |
+| 8. Founder message / 15. Origin story | A real founder/founding story | `productfact-*` or `visual-*`/`A`/`brand_owned` (including the founder's portrait) | Skip |
+| Everything else (1, 2, 6, 7, 9, 11, 12, 13) | Product facts and internal voice research suffice | `productfact-*`/`A`/`brand_owned` (+ visuals, each their own row) | Usually available |
 
-**「有這份資產」與「登記簿裡查得到」是同一件事的兩半**：上表右邊那一欄不是額外的文書工作，而是這個 gate 實際的判斷方式——`inputs/SOURCES.md` 裡查不到對應的登記列，就等同於沒有這份資產，該版型跳過。詳見 [`grounded-inputs.md`](grounded-inputs.md)「來源登記簿」。
+**"Has the asset" and "resolves in the registry" are the same fact seen two ways**: the right column above isn't extra paperwork, it's how this gate actually gets checked — no matching row in `inputs/SOURCES.md` means no asset, and the template is skipped. See [`grounded-inputs.md`](grounded-inputs.md)'s Source registry section.
 
-**跳過要留下紀錄**：批次的 `INDEX.md` 要列出「本批未使用的版型＋跳過原因＋補齊需要什麼資產」（例如「版型 4、5 跳過：尚未取得評論當事人授權；取得後可補做」）。這既讓審核者知道涵蓋率為什麼不是 15/15，也把「去要授權」變成一件被追蹤的事，而不是被默默捏造掉。
+**No registry (conversation-fact path) runs this same gate**: it checks "what class of qualifying source does this batch actually have," not which path is in use. The only class with default coverage is what the user said in conversation (`usersaid-*`/`A`/`brand_owned`, see [`grounded-inputs.md`](grounded-inputs.md)'s Conversation-fact path) — resolving against the conversation fact list counts as "has the asset." **When the batch also has a `positioning.md` at `evidence_level: sourced` with a claim registered as `positioning-*`** (see Positioning file as source), that source participates in the gate at its own class (`A` or `E`), not limited to "conversation-fact path only gets class A." Reviews, testimonials, media logos (`B`/`D`/`F`) have no conversation-fact-path equivalent — templates 4, 5, 10 are always skipped there; templates 3 and 14 needing `E` check for a `positioning-*`/`E` source specifically. The gate itself doesn't loosen, only what it checks against changes.
 
-**跳過之後怎麼補產能（有上限，不是無條件維持總數）**：把該版型的配額分配到已通過 gate 的版型上（例如原本每個版型 3-4 個，跳過 3 個版型後改成每個版型 4-5 個），但**每個版型的變化版本上限是 6 個**——撞到上限就照實減少總數，在 `INDEX.md` 寫明「本批實際 N 個（少於要求的 M 個），因為通過 gate 的版型只有 X 個」。**不要為了維持總數而讓單一版型塞到 8-10 個變化版本**，後面幾個必然是同一個角度換句話說，測不出差異；概念總數的天花板是角度數量，不是版面數量。
+**Log every skip**: the batch's `INDEX.md` lists unused templates, the reason, and what asset would unblock them (e.g., "templates 4, 5 skipped: no reviewer authorization yet; revisit once obtained"). This tells a reviewer why coverage isn't 15/15, and turns "go get authorization" into a tracked item instead of a silent gap.
 
-**整批要不要產出，是另一個層次的判斷，不在這張表裡**：這張 gate 表決定「這一批**能用哪些版型**」，決定「**這一批要不要產、最多產幾個**」的是 [`grounded-inputs.md`](grounded-inputs.md)「證據類別與缺料時的產出規則」——那裡定義了唯一的硬性停止條件（連產品事實都沒有）與「降級批次」模式（有產品事實、但沒有顧客語彙與既有成效訊號時，總數上限＝通過 gate 的版型數 × 3）。**兩份文件不會再對同一個情境給出互斥指令**：新品牌零評論零授權零報導的情況，答案是「跑降級批次、跳過 4／5／10 等版型、產出總數低於 50 並在 `INDEX.md` 說明」，不是「停止」也不是「照樣產滿 50」。
+**Redistributing skipped quota (capped, not unconditional)**: shift a skipped template's quota to the ones that passed (e.g., 3-4 each → 4-5 each after skipping 3), but **the per-template cap is 6 variations regardless**. Hitting the cap means cutting the total honestly, noted in `INDEX.md` ("actual N, below the requested M, because only X templates passed the gate"). **Don't force a single template to 8-10 variations to hit a round number** — the extra ones are the same angle in different words; the ceiling on concept count is angle count, not layout count.
 
-## 使用方式
+**Whether to produce the batch at all is a separate, higher-level call, not this table's job**: this gate decides which templates are usable; whether to produce at all — and the batch cap — is [`grounded-inputs.md`](grounded-inputs.md)'s "Evidence classes" section, which defines the one hard stop (no product facts at all) and the degraded-batch mode (product facts only, no customer voice or performance signal: cap = eligible templates × 3). The two files never give conflicting instructions for the same case: a new brand with zero reviews, zero authorization, zero coverage runs a degraded batch, skips 4/5/10 and similar, produces under 50 with the reason logged — never "stop" and never "produce 50 anyway."
 
-1. **先有根據**：產出任何內容前，先讀過輸入素材庫（贏家廣告、評論、廣告留言、品牌語氣文件）——見 [`grounded-inputs.md`](grounded-inputs.md)
-2. **先跑資格 gate，再輪流套版型**：一批 N 個概念平均分散到**通過 gate 的**版型（50 個概念、15 個版型全通過時，每個版型 3-4 個變化版本）
-3. **從素材庫填欄位**：每個版本的文案都要能追溯到某一類實際證據，並在輸出裡標註不透明的來源三元組 `source_id/evidence_class/source_license` 與成品層 `publish_status`（見下方「產出規則」）。**可追溯的來源不限於評論／贏家廣告／留言——產品事實（A 類）同樣是合格來源**，這正是 A-only 降級批次成立的依據。**只有 A 類時的界線不是「不能寫數字」，是看數字指向誰**：產品文件已載明的**產品自身規格數字**（「設定只要 5 分鐘」「10 年保固」「全台 30 家門市」）`A` 撐得住，照樣可以寫；**使用成果數字、社會證明、市場地位、競品比較**（「每週省 10 小時」「快 3 倍」「熱銷破萬」「業界唯一」）**只能由 `E` 撐**，A-only 時一律不能寫。逐項對照見 [`grounded-inputs.md`](grounded-inputs.md)「provenance schema」的 `evidence_class` 對照表
-4. **寫清楚視覺描述**：每個概念的視覺描述要具體到設計師或圖片生成工具不用猜就能做出來
+## How to use this library
 
-## 產出規則
+1. **Ground it first**: before producing anything, read the input library (winning ads, reviews, comments, brand voice doc) — see [`grounded-inputs.md`](grounded-inputs.md).
+2. **Run the eligibility gate, then rotate templates**: spread a batch of N concepts across **templates that passed the gate** (50 concepts, 15/15 passing → 3-4 variations per template).
+3. **Fill fields from the library**: every version's copy must trace back to a real evidence class, tagged with the opaque source triple `source_id/evidence_class/source_license` and product-layer `publish_status` (see Production rules, below). **Traceable sources aren't limited to reviews/winning ads/comments — product facts (class A) are equally valid**, which is exactly what makes A-only degraded batches legitimate. **A-only's limit isn't "no numbers," it's who the number is about**: a product doc's own spec numbers ("5-minute setup," "10-year warranty," "30 stores nationwide") hold up on `A` (with no registry, the source is the user's conversational self-report, `usersaid-*`, still class `A`, but goes on the pre-launch "verify before shipping" list — see [`grounded-inputs.md`](grounded-inputs.md)'s Conversation-fact path). **Outcome numbers, social proof, market position, competitive comparisons** ("saves 10 hours a week," "3x faster," "10,000+ sold," "the only one in the industry") **need `E`**, never A-only. Full mapping in [`grounded-inputs.md`](grounded-inputs.md)'s `evidence_class` table.
+4. **Write concrete visual descriptions**: specific enough that a designer or an image-generation tool doesn't have to guess.
 
-- 每個版本都要包含：**版型名稱、標題文案、內文文案、視覺描述**，以及 [`grounded-inputs.md`](grounded-inputs.md)「provenance schema」定義的欄位——來源層 `source_id`／`evidence_class`／`source_license`（三元組，多來源列多筆）＋成品層 `publish_status`
-- **標題與內文各自是一則資產，各自一筆 provenance，不共用**——例如標題來自產品事實、內文用了評論語感：
+## Production rules
+
+- Every version includes: **template name, headline copy, body copy, visual description**, plus the fields [`grounded-inputs.md`](grounded-inputs.md)'s Provenance schema defines — source layer `source_id`/`evidence_class`/`source_license` (triple, multiple rows for multiple sources) + product layer `publish_status`.
+- **Headline and body are separate assets, each with its own provenance, never shared** — e.g. a headline from product fact, body using review-derived voice:
 
   ```
-  標題  src: productfact-20260729-001/A/brand_owned      publish: publishable_rewrite
-  內文  src: review-20260715-014/B/research_only         publish: publishable_rewrite
+  Headline  src: productfact-20260729-001/A/brand_owned      publish_status: publishable_rewrite
+  Body      src: review-20260715-014/B/research_only         publish_status: publishable_rewrite
   ```
 
-  壓成一組是最常見的漏洞（其中一欄有評論來源，整個版本就被當成有根據）。**版型裡有幾則可獨立上稿的文字，就有幾筆紀錄**——評論卡的引言、數據強調卡的數字標語、CTA 短句都各自算一則
-- **素材來源一律寫成不透明的 `source_id`，不要把原文、帳號、暱稱、貼文網址寫進產出**——這條規則跟 [`grounded-inputs.md`](grounded-inputs.md)「資料處理原則」及 `creative-strategy-loop.md` 是同一套，所有模式共用，沒有例外。以下三個地方都適用：每個概念檔、`INDEX.md`、以及任何交給客戶或外部審核者的清單
-  - 格式建議：`來源類型-日期-流水號`，例如 `review-20260715-014`、`comment-20260718-003`、`winnerad-20260620-002`
-  - **`source_license` 描述的是那份來源怎麼用**（`brand_owned`／`research_only`／`authorized_verbatim`／`public_cited`／`licensed_logo`），**`publish_status` 才是這一則成品能不能上稿**（`publishable_rewrite`／`publishable_verbatim`／`blocked_*`）。逐字引用的版型（4、5）要的是來源端 `authorized_verbatim`＋成品端 `publishable_verbatim`，兩邊都要對得上
-  - **`source_id` ↔ 原始評論／留言／帳號的對照表只留在受控位置**（`inputs/` 底下、依 [`grounded-inputs.md`](grounded-inputs.md)「存取控制」限制存取權限），不進 `outputs/`、不進版本控制、不隨概念交付。理由：逐字原文本身可被搜尋引擎反查回發文者，寫進 `outputs/` 等於把去識別化白做了
-- 沒有 `source_id` 的版本不要產出——不捏造主張、數據或見證
-- **「貼近顧客真實用字」跟「逐字複製貼上」是兩件不同的事，這份文件裡任何提到「原話」「逐字」的地方都是指前者，不是後者**：預設做法是抓評論裡的痛點、轉折、用詞邏輯自己重寫文案，讓語氣貼近顧客實際講話的方式，而不是套用制式行銷腔——但這是「參考語感重寫」，不是「複製貼上一整句當文案」。真的要逐字或近逐字呈現一段評論原文（尤其是版型 4「評論卡」、版型 5「見證疊排」這類把評論當成具名／可辨識見證直接展示的版型），適用 [`grounded-inputs.md`](grounded-inputs.md)「對外具名薦證／逐字或近逐字引用」的規則：**沒有可稽核的當事人授權，不得逐字、近逐字、或足以反查回原發文者的方式引用**——公開評論不等於授權你拿去做付費廣告的薦證素材，這條規則優先於本文件任何一句「逐字勝過改寫」的措辭
-- 語氣貼合品牌語氣文件，不要套用制式的直效行銷語氣
-- 只用真實姓名、真實數據、真實引用——捏造的社會證明是合規與信任問題；具名或可辨識的引用同樣要先確認有沒有取得授權，不是「反正是真的就能用」
+  Collapsing these into one shared record is the most common failure (one field has a review source, the whole version reads as grounded). **As many records as there are independently-publishable text elements in the template** — a review card's quote, a stat callout's number line, a CTA line all count separately.
+- **Sources are always written as opaque `source_id`s — never the original text, handle, or post URL in the output**: the same rule as [`grounded-inputs.md`](grounded-inputs.md)'s data-handling principles and `creative-strategy-loop.md`, shared across every mode, no exceptions. Applies everywhere: each concept file, `INDEX.md`, any list handed to a client or external reviewer.
+  - Suggested format: `type-date-serial`, e.g. `review-20260715-014`, `comment-20260718-003`, `winnerad-20260620-002`.
+  - **`source_license` describes how that source may be used** (`brand_owned`/`research_only`/`authorized_verbatim`/`public_cited` — no dedicated value for third-party visuals: stock photos, third-party logos, non-brand-owned photos are always `blocked_needs_permission`, see [`grounded-inputs.md`](grounded-inputs.md)'s Third-party visuals); **`publish_status` is whether this finished asset may ship** (`publishable_rewrite`/`publishable_verbatim`/`blocked_*`). Verbatim templates (4, 5) need `authorized_verbatim` on the source side and `publishable_verbatim` on the product side — both have to line up.
+  - **The `source_id` ↔ original content mapping stays in a controlled location** (under `inputs/`, access-restricted per [`grounded-inputs.md`](grounded-inputs.md)'s Access control), never in `outputs/`, version control, or a delivered concept. Verbatim source text is itself searchable back to the original poster — writing it into `outputs/` defeats de-identification.
+- No `source_id` → don't produce that version. No fabricated claims, numbers, or testimonials.
+- **"Close to the customer's real words" and "copy-pasted verbatim" are different things — every mention of "verbatim" or "original wording" in this file means the former, not the latter**: the default is extracting the pain point, the turn of phrase, the logic from a review and rewriting it in your own words, matching how the customer actually talks — not lifting a whole sentence as copy. Genuinely presenting a review's original or near-original text (especially templates 4 and 5, which display a review as a named/identifiable testimonial) needs [`grounded-inputs.md`](grounded-inputs.md)'s "named external testimonial / verbatim quoting" rule: **no auditable subject authorization means no verbatim, near-verbatim, or phrasing specific enough to be traced back to the original poster** — a public review isn't authorization to use it as paid-ad testimonial, and this rule outranks anything in this file suggesting verbatim beats rewritten.
+- Match the brand voice document, not a generic direct-response tone.
+- Real names, real numbers, real quotes only — fabricated social proof is a compliance and trust problem; named or identifiable quotes still need authorization confirmed, "it's true" isn't enough on its own.
 
 ---
 
-## 15 個版型
+## The 15 templates
 
-### 1. 標題宣言（Headline Statement）
+### 1. Headline statement
 
-大膽的一句話宣言。單一產品英雄圖。背景極簡。標題扛起所有溝通責任。
+A bold single-line claim. A single hero product shot. Minimal background. The headline carries all the communication weight.
 
-- **結構**：一行主導文字（佔視覺權重 60%+）、產品圖、Logo 縮小放角落
-- **文案欄位**：一句具體到能讓人停止滑動的主張
-- **零售／DTC 範例**：「這是你買的最後一罐益生菌。」
-- **SaaS／服務範例**：「3 天結完帳，不用 3 週。」
-- **素材來源**：你最強的贏家廣告鉤子，或評論裡出現最多次的效益
+- **Structure**: one dominant line of text (60%+ of visual weight), product image, logo small in a corner
+- **Copy field**: one claim concrete enough to stop the scroll
+- **Retail/DTC example**: "The last probiotic you'll buy."
+- **SaaS/service example**: "Close the books in 3 days, not 3 weeks."
+- **Asset source**: your strongest winning-ad hook, or the benefit that appears most often in reviews
 
-### 2. 我們 vs 他們（Us vs. Them）
+### 2. Us vs. them
 
-左右對比。競品或「舊做法」放左邊（灰階處理），你的產品放右邊（全彩）。4-6 列對比項目。
+Side-by-side comparison. Competitor or "the old way" on the left (grayscale), your product on the right (full color). 4-6 rows of comparison.
 
-- **結構**：兩欄、每列打勾／打叉、你這邊視覺上「活著」
-- **文案欄位**：每一列對比都是真實差異，不是湊數
-- **零售範例**：「他們的維他命：13 種成分。我們的：60 種。」
-- **SaaS 範例**：「Excel：每週 6 小時。我們：6 分鐘。」
-- **素材來源**：評論裡提到「換過來」的內容，或留言裡拿你跟競品比較的內容
+- **Structure**: two columns, checkmark/X per row, your side visually "alive"
+- **Copy field**: every row is a real difference, not padding
+- **Retail example**: "Their multivitamin: 13 ingredients. Ours: 60."
+- **SaaS example**: "Spreadsheets: 6 hours a week. Us: 6 minutes."
+- **Asset source**: reviews mentioning "switched from," or comments comparing you to a competitor
 
-### 3. 數據強調卡（Stat Callout）
+### 3. Stat callout
 
-一個主導數字佔畫面 60%。下方補充脈絡。
+One dominant number filling 60% of the frame. Supporting context below.
 
-- **結構**：巨大數字、一行脈絡說明、產品或 Logo 錨點
-- **文案欄位**：一個真實、站得住腳的數字——有憑有據的測量勝過最高級形容詞
-- **零售範例**：「97% 的使用者 14 天內感受到差異。」
-- **SaaS 範例**：「每位業務代表每週省下 11 小時。」
-- **素材來源**：案例研究、產品數據分析、或問卷調查——絕不捏造數字
+- **Structure**: a giant number, one line of context, product or logo anchor
+- **Copy field**: one real, defensible number — a substantiated measurement beats a superlative every time
+- **Retail example**: "97% of users notice a difference within 14 days."
+- **SaaS example**: "Each rep saves 11 hours a week."
+- **Asset source**: case study, product analytics, or survey — never a fabricated number
 
-### 4. 評論卡（Review Card）
+### 4. Review card
 
-五星見證，做成截圖風格的商品評論。評論者名稱、星等、日期。
+A five-star testimonial styled as a review screenshot. Reviewer name, rating, date.
 
-- **結構**：模仿真實評論介面（蝦皮／MOMO 商品評論、Google 評論、App Store——依你的買家實際在哪裡看評論來配對）
-- **文案欄位**：真實評論逐字引用——這個素材的可信度就來自它的真實感
-- **零售範例**：蝦皮評論卡風格：「這款我試過 6 種，只有這罐回購。」
-- **SaaS 範例**：類 G2 評論卡風格：「換掉了 4 個工具，全部被這個取代。」
-- **素材來源**：`inputs/reviews/` 逐字引用——這個版型本質就是「對外具名薦證／逐字引用」，適用 [`grounded-inputs.md`](grounded-inputs.md) 裡較嚴格的那一段：需要取得評論當事人的使用授權，不能只因為評論公開可見就直接拿來做付費廣告素材
+- **Structure**: mirrors a real review interface (your buyers' e-commerce platform's own review layout, Google reviews, App Store — match whichever platform your buyers actually see reviews on; region-specific platform examples in the applicable [`geo/<code>.md`](geo/tw.md) module)
+- **Copy field**: a real review, quoted verbatim — this template's credibility comes from being genuinely verbatim
+- **Asset source**: verbatim quote from `inputs/reviews/` — this template is by definition "named external testimonial / verbatim quoting," subject to [`grounded-inputs.md`](grounded-inputs.md)'s stricter rule: needs the reviewer's own authorization for ad use, a public review alone doesn't qualify
 
-### 5. 見證疊排（Testimonial Stack）
+### 5. Testimonial stack
 
-三則顧客引言直向排列，各附照片＋姓名＋一句話引言。
+Three customer quotes stacked vertically, each with photo + name + one-line quote.
 
-- **結構**：三個短列；每一則要能在 2 秒內掃完
-- **文案欄位**：三則引言涵蓋*不同*的疑慮或效益——不要三則都在講同一個好處
-- **零售範例**：三位顧客分別談成效、口味、方便性
-- **SaaS 範例**：三種角色（執行者、主管、高層）各自稱讚自己在意的成果
-- **合規提醒**：跟評論卡一樣，這個版型放照片＋真實姓名＋引言，屬於「對外具名薦證」，適用 [`grounded-inputs.md`](grounded-inputs.md) 較嚴格的那一段——沒有當事人授權不能用真實照片與姓名，也不能逐字或近逐字呈現對方的評論內容。**「拿掉姓名、拿掉照片」不是有效的替代方案**：見證的問題核心是「呈現成某個人說過的話」，不是「有沒有標名字」——不具名但逐字引用，讀者一樣會把它當成一則真實見證來理解，一樣需要授權才能用。沒有授權時不要用「匿名見證卡」這種形式頂著用
-- **素材來源**：評論——挑選時看涵蓋面，不是只看熱情程度；沒有授權時，**唯一的替代做法是回到「內部語彙研究」，把痛點／效益的邏輯與語感重寫成一般性洞察陳述**，並遵守下面這條 N=1 規則。不要繼續套用「三則引言＋照片」這個見證版型的視覺格式，改用其他不涉及具名引言的版型（例如條列清單、特色聚焦）
+- **Structure**: three short rows; each one scannable in 2 seconds
+- **Copy field**: the three quotes cover *different* concerns or benefits — not three variations on the same point
+- **Compliance note**: like the review card, this template pairs a photo, a real name, and a quote — a "named external testimonial," subject to [`grounded-inputs.md`](grounded-inputs.md)'s stricter rule: no real photo or name without subject authorization, and no verbatim or near-verbatim quoting either. **"Remove the name, remove the photo" isn't a valid workaround** — the core issue is presenting it as something a specific person said, not whether a name is attached; an unnamed but verbatim quote still reads as a real testimonial to the audience and still needs authorization. Without authorization, don't reach for an "anonymous testimonial card" as a substitute
+- **Asset source**: reviews — select for coverage, not just enthusiasm; without authorization, **the only substitute is falling back to internal voice research**, rewriting the pain-point/benefit logic into a general insight statement, subject to the N=1 rule below. Don't keep the "three quotes + photos" visual format — switch to a template that doesn't imply named quotes (numbered list, feature spotlight)
 
-  **N=1 規則：一則評論只能支撐「這件事發生過」，不能支撐任何比率、數量或共識**。以「這款我已經回購第三次了」這則評論為例：
+  **N=1 rule: one review supports "this happened," never a ratio, count, or consensus.** Take the review "this is my third repurchase":
 
-  | 改寫成 | 可不可以 | 為什麼 |
+  | Rewritten as | Allowed? | Why |
   |---|---|---|
-  | 「不少回購顧客反映很滿意」「許多顧客回購」 | **不行** | 用一人虛構出多人份量的社會證明 |
-  | 「**回購率高**」 | **不行**（這是先前版本放行過的錯誤示範） | 「率」是一個統計量，講的是「回購的人佔全部顧客的比例」——一則評論算不出任何比率。少了「顧客」兩個字不會讓它變成非社會證明宣稱，它只是把主張藏得更隱晦 |
-  | 「顧客滿意度高」「口碑好」「大家都推薦」 | **不行** | 同上，全部都是隱含彙總的共識宣稱 |
-  | 「可以重複回購的補充包裝」「單罐用完可續購」 | 可以 | 陳述的是**產品事實**，不是別人的購買行為統計 |
-  | 「用得順手就會想再買」 | 可以 | 一般性的價值陳述，沒有宣稱有多少人這樣做 |
+  | "Many repeat customers say they're satisfied" / "Lots of customers repurchase" | **No** | Fabricates multi-person social proof from one person |
+  | "**High repeat-purchase rate**" | **No** (a mistake a prior version of this file let through) | "Rate" is a statistic — the proportion of all customers who repurchase — one review computes no ratio. Dropping "customers" doesn't stop it being a social-proof claim, it just hides it better |
+  | "High customer satisfaction," "great word of mouth," "everyone recommends it" | **No** | Same failure — an implied-consensus claim |
+  | "A refill pack for repeat use" / "one-bottle-and-reorder option" | Yes | States a **product fact**, not a statistic about other people's behavior |
+  | "Once it clicks, you'll want more" | Yes | A general value statement, no claim about how many people do this |
 
-  要講「不少顧客」「多數顧客」「回購率高」「◯% 的人」這類**指涉人數或比例**的話，前提是你真的做過彙總並留得下計算依據（例如「200 則評論裡有 35% 提到回購」，且 200 與 35% 都能被稽核）。彙總結果本身也適用同一條線：算出來是 3/200，就不能寫成「不少顧客」。
+  Claims quantifying "many," "most," "high repeat rate," "X% of people" require a genuinely computed, auditable aggregate (e.g. "35% of 200 reviews mention repurchasing," with both numbers auditable). The same line applies to the aggregate itself — 3-out-of-200 doesn't get to read as "quite a few."
 
-### 6. Before / After 對比
+### 6. Before/After
 
-分割圖搭配箭頭。轉變框架——產品成效、工作流程、或視覺證明。
+Split-image with an arrow. A transformation frame — product result, workflow, or visual proof.
 
-- **結構**：兩個區塊、箭頭或分隔線、每個狀態附極簡文字標籤
-- **文案欄位**：用顧客自己的話標註兩個狀態（「週日晚上被報表逼瘋」→「報表自動生成」）
-- **零售範例**：皮膚、精神、空間——經典的視覺轉變
-- **SaaS 範例**：混亂的 6 個分頁工作流程 → 一個乾淨的儀表板
-- **合規提醒**：Before/After 宣稱在健康、金融、美容產業受法規規範——投放前對照 `ads` 技能的 [`references/compliance-taiwan.md`](../../ads/references/compliance-taiwan.md)，尤其醫美／化妝品／保健食品類目——**受規管產業的法遵載入是 fail-closed 的**，讀不到那份檔案時只能輸出待人工複核的骨架，見 `SKILL.md`「法遵強制載入」
-- **素材來源**：評論裡的轉變語句（「我以前 X，現在 Y」）
+- **Structure**: two panels, an arrow or divider, minimal label text per state
+- **Copy field**: label both states in the customer's own words ("dreading Sunday-night reports" → "reports generate themselves")
+- **Retail example**: skin, energy, or space — the classic visual transformation
+- **SaaS example**: a chaotic 6-tab workflow → one clean dashboard
+- **Compliance note**: before/after claims are regulated in health, finance, and beauty categories — see [`geo/tw.md`](geo/tw.md) before shipping this template in a regulated category; **regulated-industry loading is fail-closed** — unable to load that module means output only an unaudited skeleton, per `SKILL.md`'s mandatory-load section
+- **Asset source**: transformation language in reviews ("I used to X, now Y")
 
-### 7. 問題／解方（Problem / Solution）
+### 7. Problem/Solution
 
-痛點放上方（文字或圖片），產品作為下方的答案。
+Pain point up top (text or image), product as the answer below.
 
-- **結構**：兩個區域——上方張力、下方緩解
-- **文案欄位**：用顧客描述痛點的邏輯與用詞重寫（不是逐字複製整句評論），接一句產品的解答
-- **零售範例**：「早上還要吞 6 顆保健品？」→ 一匙沖泡的視覺
-- **SaaS 範例**：「你的 CRM 完全不知道產品使用狀況。」→ 整合截圖
-- **素材來源**：`inputs/reviews/` 裡最常見的痛點措辭——這個版型的標題通常是短句、重寫過的，不是評論整句照搬；如果想直接沿用某則評論裡一句非常精準的原句，比照「產出規則」的逐字引用授權要求先確認
+- **Structure**: two zones — tension above, relief below
+- **Copy field**: rewrite the pain point in the customer's own logic and phrasing (not lifted verbatim from a review), followed by the product's answer
+- **Retail example**: "Still swallowing 6 supplements every morning?" → a one-scoop visual
+- **SaaS example**: "Your CRM has no idea how the product's actually being used." → an integration screenshot
+- **Asset source**: the most common pain-point phrasing in `inputs/reviews/` — this template's headline is usually a short rewrite, not a review sentence lifted whole; reusing one review's exact phrasing needs the same verbatim authorization check as the Production rules section above
 
-### 8. 創辦人喊話（Founder Message）
+### 8. Founder message
 
-手寫風格或純文字的創辦人筆記。口語、個人化語氣。
+Handwritten-style or plain-text founder note. Conversational, personal tone.
 
-- **結構**：筆記風版面、創辦人姓名／照片、不放產品美圖
-- **文案欄位**：「我做這個是因為……」——一段誠實的話，不要行銷修飾
-- **零售範例**：「嗨，我做這個是因為市面上『健康』點心其實都是偽裝的糖果。」
-- **SaaS 範例**：「我做了 6 年營運，這是我一直希望存在的工具。」
-- **素材來源**：真實的創業故事——捏造的話這個版型會整個垮掉
+- **Structure**: note-style layout, founder name/photo, no product glamour shots
+- **Copy field**: "I built this because…" — an honest line, no marketing polish
+- **Retail example**: "Hey, I built this because most 'healthy' snacks are just candy in disguise."
+- **SaaS example**: "6 years running ops, this is the tool I always wished existed."
+- **Asset source**: a real founding story — a fabricated one collapses this template entirely
 
-### 9. 特色聚焦（Feature Spotlight／成分聚焦）
+### 9. Feature spotlight
 
-產品英雄圖放中央，周圍 4-6 個標註框強調關鍵組成。
+Hero product shot centered, 4-6 callout boxes around it highlighting key components.
 
-- **結構**：中央圖片、放射狀標註、每個標註 3-6 字
-- **文案欄位**：買家真的會問的成分／功能——不是你完整的功能清單
-- **零售範例**：產品瓶身搭配每個關鍵成分與其作用的標註
-- **SaaS 範例**：儀表板截圖搭配評論裡最常提到的 4 個功能的標註
-- **素材來源**：評論與留言裡出現最多次的功能／成分
+- **Structure**: center image, radial callouts, 3-6 words per callout
+- **Copy field**: the ingredients/features buyers actually ask about — not your full feature list
+- **Retail example**: product bottle with a callout per key ingredient and its effect
+- **SaaS example**: dashboard screenshot with callouts on the 4 most-mentioned features in reviews
+- **Asset source**: the features/ingredients that come up most often in reviews and comments
 
-### 10. 媒體報導（Press Mention）
+### 10. Press mention
 
-「媒體報導」搭配媒體 Logo 與一句摘要引言。
+"As seen in" with media logos and a one-line pull quote.
 
-- **結構**：Logo 排列＋一句有力引言＋產品錨點
-- **文案欄位**：來自真實報導的真實引言
-- **零售範例**：「這個品類多年來第一個真正的新想法。」——〔媒體名稱〕
-- **合規提醒**：只能用真的報導過你的媒體 Logo，並確認對方的 Logo 使用條款
-- **素材來源**：真實的媒體報導、Podcast、電子報、或產業分析師提及
+- **Structure**: logo row + a strong pull quote + product anchor
+- **Copy field**: a real quote from real coverage
+- **Retail example**: "The first genuinely new idea in this category in years." — [Publication]
+- **Compliance note**: media logos are third-party visuals, always `blocked_needs_permission` in this package (see [`grounded-inputs.md`](grounded-inputs.md)'s Third-party visuals) — this template's logo element has no registration path that currently passes; skip
+- **Asset source**: real media coverage, podcast, newsletter, or analyst mention
 
-### 11. 生活情境英雄圖（Lifestyle Hero）
+### 11. Lifestyle hero
 
-產品在真實情境中使用。文案極簡。嚮往感勝過推銷感。
+Product in a real-use context. Minimal copy. Aspiration over pitch.
 
-- **結構**：一張照片扛起所有溝通、最多附一句短文與 Logo
-- **文案欄位**：5-8 字，帶身分認同感（「早晨，搞定。」）
-- **零售範例**：產品放在廚房檯面、融入日常routine
-- **SaaS 範例**：工具畫面出現在真實的工作時刻（站立會議、結案電話、上線日）
-- **素材來源**：贏家廣告的視覺模式；評論裡的身分認同語言
+- **Structure**: one photo carries the whole message, at most a short line and logo
+- **Copy field**: 5-8 words, identity-driven ("Mornings, handled.")
+- **Retail example**: product on a kitchen counter, part of a daily routine
+- **SaaS example**: the tool visible in a real work moment (standup, closing call, launch day)
+- **Asset source**: visual patterns from winning ads; identity language from reviews
 
-### 12. 條列清單（Numbered List）
+### 12. Numbered list
 
-「5 個〔受眾〕正在轉換到〔品牌〕的理由。」每點搭配 icon。
+"5 reasons [audience] is switching to [brand]." Each point with an icon.
 
-- **結構**：編號列、每列 icon＋短句、底部產品錨點
-- **文案欄位**：每個理由是不同角度——痛點、成果、證明、差異化、價格
-- **零售範例**：「5 個跑者今年轉換到〔品牌〕的理由」
-- **SaaS 範例**：「4 個財務團隊正在離開〔舊系統〕的理由」
-- **素材來源**：彙整評論裡最常見的轉換理由
+- **Structure**: numbered rows, icon + short line each, product anchor at bottom
+- **Copy field**: each reason is a different angle — pain, outcome, proof, differentiation, price
+- **Retail example**: "5 reasons runners are switching to [brand] this year"
+- **SaaS example**: "4 reasons finance teams are leaving [old system]"
+- **Asset source**: the most common switching reasons across reviews
 
-### 13. FAQ 卡（FAQ Card）
+### 13. FAQ card
 
-把常見疑慮當問題，直接回答。
+A common objection framed as a question, answered directly.
 
-- **結構**：問題醒目、答案簡潔、產品錨點
-- **文案欄位**：疑慮要用*顧客自己的措辭*——「這說的不就是我」的認同感就是鉤子
-- **零售範例**：「敏感肌適用嗎？適用——原因是……」
-- **SaaS 範例**：「這能通過我們的資安審查嗎？符合相關資安規範、支援 SSO。」
-- **素材來源**：`inputs/comments/` ——大家在你廣告下公開留的疑慮
+- **Structure**: prominent question, concise answer, product anchor
+- **Copy field**: phrase the objection in *the customer's own words* — the "that's exactly my situation" recognition is the hook
+- **Retail example**: "Safe for sensitive skin? Yes — here's why…"
+- **SaaS example**: "Will this pass our security review? Meets relevant standards, supports SSO."
+- **Asset source**: `inputs/comments/` — the objections people leave publicly under your ads
 
-### 14. 競品點名（Competitor Callout）
+### 14. Competitor callout
 
-點名特定競品（或該品類的預設選項），說明差異。大膽但要有事實依據。
+Names a specific competitor (or the category default) and states the difference. Bold, but factually grounded.
 
-- **結構**：他們 vs 你，一個清楚的差異軸線
-- **文案欄位**：一個你能用事實佐證的差異——比較性宣稱容易被檢視
-- **零售範例**：「跟〔競品〕一樣，但少了 14 克糖。」
-- **SaaS 範例**：「〔競品〕按人頭收費。我們不會。」
-- **合規提醒**：比較性廣告在台灣受公平交易法對不實廣告與比較性廣告的規範，內容必須真實且可佐證，部分平台也限制直接點名競品——投放前核對平台政策與宣稱是否站得住腳
-- **素材來源**：評論與留言裡提到競品的內容——顧客自己會幫你點名替代方案
+- **Structure**: them vs. you, one clear axis of difference
+- **Copy field**: a difference you can back with fact — comparative claims get scrutinized
+- **Retail example**: "Same as [competitor], minus the 14 grams of sugar."
+- **SaaS example**: "[Competitor] charges per seat. We don't."
+- **Compliance note**: comparative advertising draws regulatory scrutiny in most markets — claims must be true and substantiable, and some platforms restrict naming competitors directly. Check platform policy and claim substantiation before launch; region-specific rules in the applicable [`geo/<code>.md`](geo/tw.md) module
+- **Asset source**: competitor mentions in reviews and comments — customers name the alternative for you
 
-### 15. 起源故事（Origin Story）
+### 15. Origin story
 
-創辦人照片搭配「為什麼做這個」的敘事。文案篇幅比其他版型長。
+Founder photo with a "why we built this" narrative. Longer copy than most templates.
 
-- **結構**：人像或團隊照、2-3 段短文、產品退居第二位
-- **文案欄位**：促成創業的具體時刻或挫折——具體性就是可信度
-- **零售範例**：「我們花了 2 年、47 個配方版本才做對，原因是……」
-- **SaaS 範例**：「我們自己就是那個使用者。我們需要的工具不存在，所以就自己做了。」
-- **素材來源**：真實故事——比起冷開發受眾，更適合搭配熟客／再行銷受眾使用
+- **Structure**: portrait or team photo, 2-3 short paragraphs, product takes a back seat
+- **Copy field**: the specific moment or frustration that led to founding — specificity is what makes it credible
+- **Retail example**: "It took us 2 years and 47 formula versions to get this right, because…"
+- **SaaS example**: "We were the user. The tool we needed didn't exist, so we built it."
+- **Asset source**: a real story — better suited to warm/retargeting audiences than cold prospecting
 
 ---
 
-## 每個概念的輸出格式
+## Per-concept output format
 
 ```markdown
-## 概念 [N]：[版型名稱]
+## Concept [N]: [template name]
 
-**標題**：[標題文案]
-  src: [source_id/evidence_class/source_license；多來源用分號分隔]
-  publish: [publishable_rewrite／publishable_verbatim]
-**內文**：[輔助文案，若該版型有用到]
-  src: [同上，內文自己的來源，不沿用標題那筆]
-  publish: [...]
-**視覺**：[版面描述，具體到設計師或生成工具不用猜就能做]
-  asset_id: [每一個要放進成品的視覺元素各一行：Logo、人像、產品圖、素材庫圖]
-            [格式同來源三元組：asset_id/evidence_class/source_license]
-  publish: [每個視覺元素各自的 publish_status]
-  （純版面指示——色塊、留白、字級、對齊——不需要 asset_id，那是指示不是資產）
-**圖片 Prompt**：[給圖片生成工具的 prompt，若要生成——參考 [`copy-and-visual-production.md`](copy-and-visual-production.md) 的圖片／影片生成工具]
+**Headline**: [headline copy]
+  src: [source_id/evidence_class/source_license; semicolon-separate multiple sources]
+  publish_status: [publishable_rewrite/publishable_verbatim]
+  claim1="[the claim, as written, in this headline]" ← [source_id]/[evidence_class] @[locator]
+  (list claim2, claim3… for more than one claim; **even a single claim needs `@locator`** — claim count doesn't change the check)
+**Body**: [supporting copy, if the template uses it]
+  src: [as above, this body's own source, not reused from the headline]
+  publish_status: [...]
+  claim1="[the claim in this body copy]" ← [source_id]/[evidence_class] @[locator]
+**Visual**: [layout description, concrete enough for a designer or generation tool to build without guessing]
+  asset_id: [visual element 1's asset_id]/[evidence_class]/[source_license]
+  publish_status: [this visual element's own publish_status]
+  asset_id: [visual element 2's asset_id]/[evidence_class]/[source_license]
+  publish_status: [this visual element's own publish_status]
+  (logo, portrait, product shot… **every visual element that ships gets its own complete record** — its own `asset_id/evidence_class/source_license` + its own `publish_status`, never one `publish_status` shared across multiple `asset_id`s; pure layout instructions — color blocks, whitespace, font size, alignment — don't need an asset_id, that's an instruction, not an asset; visual elements have no textual claim, so no `claimN`. **Visual assets only ever have two legal licenses, `brand_owned`/`authorized_verbatim` — no `attribution` needed**; stock photos, third-party logos, any non-brand-owned photo are always `blocked_needs_permission` and don't ship, see [`grounded-inputs.md`](grounded-inputs.md)'s Third-party visuals)
+**Image prompt**: [prompt for an image-generation tool, if generating — see [`copy-and-visual-production.md`](copy-and-visual-production.md)'s generation tools section]
 ```
 
-填寫範例：
+Filled example:
 
 ```markdown
-## 概念 7：數據強調卡
+## Concept 7: Stat callout
 
-**標題**：報表自動生成，設定只要 5 分鐘
+**Headline**: Reports generate themselves — 5-minute setup
   src: productfact-20260729-001/A/brand_owned
-  publish: publishable_rewrite
-**內文**：導入後行銷團隊平均每週少花 10 小時在拉數字上
+  publish_status: publishable_rewrite
+  claim1="5-minute setup" ← productfact-20260729-001/A @§3 setup flow
+**Body**: Marketing teams save an average of 10 hours a week after adopting
   src: casestudy-20260701-002/E/public_cited
-  publish: publishable_rewrite
-  attribution: 資料來源：〈2026 行銷團隊工時調查〉，OO 研究顧問，2026 年 7 月
-**視覺**：深色底、左側產品介面截圖、右側大字級數字，下緣放案例來源一行
+  publish_status: publishable_rewrite
+  attribution: Source: "2026 Marketing Team Hours Survey," OO Research Consulting, July 2026
+  claim1="save an average of 10 hours a week" ← casestudy-20260701-002/E @p.4 para.2
+**Visual**: dark background, product UI screenshot left, large numerals right, case-study source line along the bottom edge
   asset_id: visual-20260712-003/A/brand_owned
-  publish: publishable_rewrite
+  publish_status: publishable_rewrite
 ```
 
-（標題的「5 分鐘」是產品規格數字，`A` 撐得住；內文的「每週少花 10 小時」是使用成果數字，必須 `E`——這兩則來源不同、等級不同，所以分兩筆。內文來源是 `public_cited`，所以要帶可對外顯示的 `attribution`，這一行會跟著交付。視覺用的是品牌自有的介面截圖，登記成 `visual-*`／`A`／`brand_owned`。）
+(The headline's "5-minute setup" is a product spec number, `A` holds it. The body's "10 hours a week" is an outcome number, needs `E` — different source, different class, so two separate records. The body's source is `public_cited`, so it carries a publishable `attribution` line. The visual has one element: a brand-owned product screenshot, registered `visual-*`/`A`/`brand_owned`, no `attribution` needed. **This concept originally planned a stock background image, but third-party visuals are always `blocked_needs_permission`** (see [`grounded-inputs.md`](grounded-inputs.md)'s Third-party visuals) — that element doesn't ship; delivery notes "this concept's planned background image was from a third-party stock library, which this package can't clear — substitute a brand-original asset, or confirm the asset's copyright has actually been transferred (not just licensed) if that's the case." The visual has no textual claim, so no `claimN`. Every text asset's `claimN` points to its position in the source — `@locator` — for the pre-output claim-level check; it isn't optional.)
 
-- **缺任一欄的概念不要輸出**，改列進「以下概念缺來源標註，補上才能交付」
-- **`source_id`／`asset_id` 在 `inputs/SOURCES.md` 查不到、或欄位與登記列不符的概念不要輸出**——格式對不等於來源存在，判斷方式見 [`grounded-inputs.md`](grounded-inputs.md)「來源登記簿」的四項解析檢查
-- **`publish_status` 是 `blocked_*` 的概念不要輸出**，改回報缺什麼授權或什麼等級的證據
-- **`source_license` 是 `public_cited` 卻沒有 `attribution` 的，同樣不輸出**——這類來源的授權條件就是要標出處，標不出來就是沒有取得使用資格
+- **A concept missing any field (including each claim's `claimN`/`@locator`) doesn't ship** — list it under "these concepts are missing source attribution, needed before delivery."
+- **A concept whose `source_id`/`asset_id` doesn't resolve in `inputs/SOURCES.md`, or whose fields don't match the registered row, doesn't ship** — matching format isn't the same as the source existing; see [`grounded-inputs.md`](grounded-inputs.md)'s Source registry section for the full resolution checks (resolves, unique, fields match, required proof in place, full hash re-check — text and visual assets both run these five; text assets additionally run claim-level check, #6). **No registry**: resolve against the conversation fact list instead (`usersaid-*`, see [`grounded-inputs.md`](grounded-inputs.md)'s Conversation-fact path) — same "unresolvable means don't ship" rule.
+- **A concept with `publish_status: blocked_*` doesn't ship** — report what authorization or evidence class is missing instead.
+- **A `public_cited` source with no `attribution` doesn't ship either** — that license's condition is showing attribution; unable to show it means the usage right was never established.
 
-**輸出裡不要出現原文引述、評論者帳號或暱稱、貼文網址、平台個人頁連結**——要查原文的人拿 `source_id` 去受控位置的對照表查。
+**Verbatim quotes only appear in output after passing the verbatim-authorization gate**: only the lines where `source_license: authorized_verbatim` *and* the product layer is `publishable_verbatim` (templates 4, 5, see How to use this library and Production rules, above) may show real quoted review text — that's the entire point of those two templates. **A registry entry that hasn't cleared the verbatim gate** (`research_only`, or `authorized_verbatim` still marked `publishable_rewrite` at the product layer, or anything `blocked_*`) **still can't appear in output** — rewrite it or drop it. **Reviewer handles, post URLs, or profile links never appear in output regardless of authorization status** — that's the data-handling rule (see [`grounded-inputs.md`](grounded-inputs.md)); it's a separate question from whether the copy itself may quote verbatim. Anyone tracing the original goes through `source_id` to the controlled mapping, not a leftover handle or link in the output.
 
-批次產出時，加一份 `INDEX.md`，**逐則（不是逐概念）**列出版型類型、資產類型（標題／內文／視覺）、`src` 或 `asset_id` 三元組與 `publish`（同樣不含原文與帳號），以及本批跳過的版型與原因（見「版型資格 gate」），讓審核者能在兩分鐘內掃完整批：
+For batch production, add an `INDEX.md` listing **per asset, not per concept** — template type, asset type (headline/body/visual), `src` or `asset_id` triple, `publish_status` (same rule: no original text or handles), and each claim's `claim`/`locator`, plus this batch's skipped templates and why (see Eligibility gate) — scannable by a reviewer in two minutes:
 
 ```markdown
-| 概念 | 版型 | 資產 | src / asset_id | publish | attribution |
-|---|---|---|---|---|---|
-| 7 | 數據強調卡 | 標題 | productfact-20260729-001/A/brand_owned | publishable_rewrite | — |
-| 7 | 數據強調卡 | 內文 | casestudy-20260701-002/E/public_cited | publishable_rewrite | 〈2026 行銷團隊工時調查〉，OO 研究顧問 |
-| 7 | 數據強調卡 | 視覺 | visual-20260712-003/A/brand_owned | publishable_rewrite | — |
+| Concept | Template | Asset | src / asset_id | publish_status | claim / locator | attribution |
+|---|---|---|---|---|---|---|
+| 7 | Stat callout | Headline | productfact-20260729-001/A/brand_owned | publishable_rewrite | claim1 "5-minute setup" @§3 setup flow | — |
+| 7 | Stat callout | Body | casestudy-20260701-002/E/public_cited | publishable_rewrite | claim1 "save 10 hours a week on average" @p.4 para.2 | "2026 Marketing Team Hours Survey," OO Research Consulting |
+| 7 | Stat callout | Visual (product screenshot) | visual-20260712-003/A/brand_owned | publishable_rewrite | — | — |
 ```
 
-`INDEX.md` 最上方另記一行**登記簿核對結果**：「本批 N 則資產，逐筆對 `inputs/SOURCES.md` 解析：全部命中／有 M 則命中失敗（已擋下未輸出）」。審核者要能只看這一份就知道有沒有東西是憑空生出來的。
+**A concept with two or more visual elements gets one row per element in `INDEX.md`** — don't cram multiple `asset_id`s into one row's "src / asset_id" field, a reviewer can't tell which one was blocked. **Third-party visuals are always `blocked_needs_permission` and don't appear as a formal asset row** — note the omission in the skipped-templates/reasons area instead (e.g. "concept 7's planned background image was a third-party stock photo, omitted") so the reviewer knows what's missing and why, rather than assuming the concept is simply incomplete.
 
-## 批次分配
+At the top of `INDEX.md`, one line of **source-resolution results**: registry path — "N assets this batch, resolved against `inputs/SOURCES.md`: all matched / M failed to resolve (blocked, not shipped)"; conversation-fact path — "N assets this batch, resolved against this conversation's fact list: all matched / M failed to resolve (blocked, not shipped); no source registry this batch, factual basis is the user's conversational self-report." A reviewer should be able to read this one line and know whether anything was fabricated, and how thick this batch's evidence base is.
 
-標準 50 個概念的批次：每個**通過資格 gate 的**版型 3-4 個變化版本。15 個版型全部通過 gate 時就涵蓋全部 15 個；有版型被跳過時，把配額分配給其餘版型（**每版型上限 6 個**），涵蓋率與實際總數照實記在 `INDEX.md`（例如「12/15，跳過 4、5、10，原因：無授權見證與媒體報導；實際產出 50 個」）。通過 gate 的版型太少、撞到每版型 6 個上限時，總數就照實往下調（例如只剩 8 個版型可用 → 上限 48），並在 `INDEX.md` 記明原因。**不要為了讓涵蓋率或總數好看而用捏造或未授權的素材補位、也不要用近似重複的變化版本灌數量**——涵蓋率與總數都是產能配置的參考數字，合規與測試價值是不能拿來換的。
+## Batch allocation
 
-降級批次（無顧客語彙與既有成效訊號時）另有更嚴的總數上限，見 [`grounded-inputs.md`](grounded-inputs.md)「證據類別與缺料時的產出規則」。
+A standard 50-concept batch: 3-4 variations per **gate-eligible** template. All 15 passing → full coverage. Any skipped → redistribute their quota to the rest (**cap: 6 per template**), and log actual coverage and total honestly in `INDEX.md` ("12/15, skipped 4, 5, 10 — no authorized testimonial or press coverage; actual output 50"). When too few templates pass and the 6-per-template cap gets hit, scale the total down honestly (e.g. only 8 templates available → cap 48) and note why. **Don't pad coverage or total count with fabricated/unauthorized material, or with near-duplicate variations** — coverage and total count are capacity-planning numbers, not something compliance or test value gets traded for.
 
-如果成效數據顯示某些版型對這個品牌持續表現較好，可以調整成 60% 已驗證版型／40% 其餘可用版型覆蓋——但不要把覆蓋率降到零。每天持續產出正是為了對抗疲乏；這個月被認為「疲乏」的版型，可能是下個月放大規模時的關鍵。
+Degraded batches (no customer voice or performance signal) have a stricter total cap — see [`grounded-inputs.md`](grounded-inputs.md)'s Evidence classes section.
+
+**The 60/40 mix only adjusts on `campaign-analysis`'s structured conclusions, never on a glance at performance numbers the user pasted in** — that's the analysis-unit, comparability-check, sample-size-gate work described in `SKILL.md`'s scope boundary. When that skill delivers an actionable conclusion that certain templates consistently outperform, shift to 60% validated templates / 40% remaining coverage; **without that conclusion, keep the default mix, don't self-adjust.** Whatever the mix, never drop coverage to zero — sustained production is exactly what fights creative fatigue; a template judged "fatigued" this month may be the one that matters when scaling next month.

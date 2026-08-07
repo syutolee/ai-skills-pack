@@ -1,261 +1,367 @@
-# 有根據的輸入與資料處理原則
+# Grounded inputs and data-handling principles
 
-**全模式共用的入口檔案。** 多數 AI 產出廣告失敗的原因不是輸出品質差，是輸入沒有根據：沒有根據的產出，寫出來的是「聽起來合理」但基於訓練資料的廣告，不是真的對這個品牌有效的廣告。
+**Shared entry point for every mode.** Most AI-generated ads fail not on output quality but on ungrounded input: a concept with no evidence behind it reads as plausible ad copy, not copy that actually works for this brand.
 
-## 輸入素材庫結構
+## Input library structure
 
 ```
 inputs/
-  winning-ads/   過去 90 天表現最好的廣告截圖 10-20 張
-  reviews/       50-100 則顧客評論，存成 .md/.txt
-  comments/      既有廣告下的公開留言——疑慮、自發性好評、顧客自己提出的角度
-brand/           品牌語氣文件、色碼、Logo、產品素材
-outputs/         按日期分資料夾的批次產出（outputs/YYYY-MM-DD/）
+  winning-ads/   10-20 screenshots of the best-performing ads from the last 90 days
+  reviews/       50-100 customer reviews, saved as .md/.txt
+  comments/      public comments under existing ads — objections, spontaneous praise, angles customers surface themselves
+brand/           brand voice doc, color codes, logo, product assets
+outputs/         batch output by date (outputs/YYYY-MM-DD/)
 ```
 
-### 台灣的評論與留言來源
+Region-specific review/comment sources: [`geo/<code>.md`](geo/tw.md) for the markets in `profile.md`'s `geo` list (TW: [`geo/tw.md`](geo/tw.md)).
 
-| 輸入類型 | 台灣對應來源 |
-|----------|--------------|
-| 顧客評論 | 蝦皮／MOMO 商品評論、Google 評論、App Store／Google Play 評論 |
-| 論壇／口碑討論 | Dcard（尤其美妝、3C、感情、職場版）、PTT 相關看板 |
-| 廣告留言 | Meta／Instagram 廣告下的**公開**留言 |
-| 開箱／推薦內容 | YouTube／小紅書（若受眾涉及對岸市場）／IG 限動分享 |
+**Why every input matters**: winning ads carry hooks and structures already proven for this brand; reviews carry the buyer's own language for pain points and payoffs — reference that language's logic and register when rewriting, don't paste it verbatim as copy (verbatim quoting needs authorization, see Data-handling below); comments are the most-overlooked, highest-value input — an objection ("does this work for X?") becomes an FAQ card directly, spontaneous praise surfaces angles you hadn't thought of.
 
-### 為什麼每個輸入都重要
+Inputs go stale: refresh winning ads as new ones scale, refresh reviews/comments monthly.
 
-- **贏家廣告**：帶著這個品牌已經驗證有效的鉤子、結構、角度
-- **顧客評論**：帶著買家描述痛點、轉變、意外收穫時的真實用字——**參考這些用字的邏輯與語感重寫文案，不要套用制式行銷腔**（這不等於逐字複製整句評論當文案；逐字或近逐字引用需要授權，見下方「資料處理原則」）
-- **廣告留言**：最常被忽略、卻最有價值的輸入——疑慮（「這對○○有用嗎？」）可以直接變成 FAQ 卡片廣告，自發性好評能挖出你自己沒想到的角度
+## Two source paths — decided by file state, not by asking
 
-輸入會過期：贏家廣告要隨新廣告放大持續更新；評論與留言建議每月更新一次。
-
-## 證據類別與缺料時的產出規則
-
-「有沒有料」不是一個開關，要拆成**證據類別**逐類判斷：
-
-| 證據類別 | 來源 | 沒有它會怎樣 |
+| File state | Path | What it means |
 |---|---|---|
-| **A. 產品事實** | 品牌自己的產品規格、成分、功能、價格、服務內容 | 沒有這個什麼都寫不出來——**這是唯一的硬性停止條件** |
-| **B. 顧客語彙** | `inputs/reviews/`、`inputs/comments/`（用於參考語感重寫，不逐字引用） | 文案會退回「聽起來像廣告」的通用寫法，角度來源大幅變窄 |
-| **C. 既有成效訊號** | `inputs/winning-ads/`（這個品牌驗證過有效的鉤子與結構） | 沒有已驗證方向可延伸，全部概念都是未驗證假設 |
-| **D. 已授權逐字見證** | 真實評論＋當事人可稽核的授權 | 評論卡、見證疊排版型不能做 |
-| **E. 可佐證數字** | 案例研究、產品分析、問卷結果 | 數據強調卡、競品點名版型不能做 |
-| **F. 真實媒體報導** | 真的報導過你的媒體＋Logo 使用條款允許 | 媒體報導版型不能做 |
+| `inputs/SOURCES.md` exists and parses | **Registry path** | Every rule under Source registry below runs, no relaxation |
+| `inputs/SOURCES.md` doesn't exist (typical: user just describes the product in conversation, no `inputs/` at all) | **Conversation-fact path** | The only usable source is what the user says about the product this session — class `A`, code `usersaid-*` |
+| File exists but won't parse, or has a duplicate `source_id` | **Stop and report, neither path runs** | A broken registry gets fixed, not downgraded — otherwise "break the registry" becomes the easiest way to skip verification |
 
-### 入口規則
+**`inputs/` has material but no `SOURCES.md`**: take the conversation-fact path; that material isn't usable this run (unregistered material isn't a source) — tell the user "the reviews/winning ads under `inputs/` weren't used; register them first to use them."
 
-1. **A 也沒有 → 停止**，請使用者提供產品資訊。這是唯一「整批不產出」的情況
-2. **有 A，但 B 與 C 都是空的（典型情境：剛上線的新品牌）→ 進入「降級批次」模式，不是停止，也不是照常產出**：
-   - 在 `INDEX.md` 最上方標記 **`根據等級：降級（僅產品事實，無顧客語彙與既有成效訊號）`**，並列出缺哪幾類證據
-   - **本批總數上限 = 通過版型資格 gate 的版型數 × 3**，不是固定 50。理由：概念總數的天花板是**角度數量**，不是版面數量；只靠產品事實時可支撐的真實角度有限，硬產 50 個只會得到同一個角度換十種版面的填充物，那跟捏造是同一類問題的不同表現（一個是編內容，一個是編數量）
-   - 交付時明講「這批是在沒有顧客語彙輸入的條件下產出的，屬於待驗證假設；跑出前幾支有成效的廣告、或累積到 50-100 則評論之後，重跑一次會明顯不同」
-3. **有 A，且 B 或 C 至少一個有料 → 正常批次**，總數依使用者要求（標準 50），一樣先跑版型資格 gate
-4. **D／E／F 只影響個別版型能不能做**（由 [static-ad-templates.md](static-ad-templates.md) 的版型資格 gate 處理），**不影響整批要不要產出**
+Both paths hold the same floor: no fabricated sources, no fabricated numbers, no evidence-class upgrades, full provenance on every asset before it ships. What changes is only how "the user's own product claim" gets a source code and a limit, instead of having nowhere to go.
 
-**每個版型的變化版本上限是 6 個**（不論正常批次或降級批次）。跳過的版型把配額分配給通過 gate 的版型時，撞到這個上限就**照實減少總數**，並在 `INDEX.md` 寫明「本批實際產出 N 個（少於要求的 M 個），因為通過 gate 的版型只有 X 個、每版型上限 6 個」。**不要為了達成使用者要求的總數而突破上限**——同一個版型硬塞 8-10 個變化版本，後面幾個必然是近似重複，測不出東西。
+## Evidence classes and what to do when material is missing
 
-**這份入口規則跟版型資格 gate 是同一套判斷的兩半，不會對同一個情境給出互斥指令**：新品牌零評論零授權零報導的答案是「跑降級批次、跳過 4／5／10 等版型、產出總數低於 50 並在 `INDEX.md` 說明」，不是「停止」也不是「照樣產滿 50」。
-
-## 資料處理原則（資料最小化，強制）
-
-- **只蒐集有明確目的（產出素材）且來源公開／使用者有權使用的內容**——公開評論、公開廣告留言可以用；**私訊、私人聊天記錄（包含 LINE OA 的私訊回饋）預設排除**，除非當事人已明確同意用於行銷素材產出
-
-- **「公開可見」不等於「可以拿去做付費廣告的薦證素材」，這是兩件不同的事：**
-  - **內部語彙研究（風險較低）**：把評論拿來當「這個受眾怎麼描述他們的問題／怎麼講話」的語感參考，自己重新寫文案、不逐字複製、不具名、不聲稱這是某人的真實見證——這是本技能預設的使用方式
-  - **對外具名薦證／逐字或近逐字引用（風險較高，需要額外授權）**：把某則評論的原文或接近原文的文字，當成廣告裡「某某顧客說」的具名或可辨識見證放上去（不論有沒有標真名，只要文字夠獨特、搭配帳號截圖或大頭貼，就可能被辨識出是誰）——公開發表評論不代表當事人同意這段話被拿去做**付費廣告**的薦證素材，這通常需要另外取得使用授權（多數平台的評論／留言 ToS 本身也不會自動把再利用權轉給你）
-
-- **去識別化不是萬能的**：存檔時移除或遮蔽評論者的個人識別資訊（全名、電話、email、帳號 ID）是基本動作，但如果引用的文字本身夠獨特，去掉姓名不代表無法反查——把這段文字丟進搜尋引擎可能還是找得到原始貼文與發文者。真的要匿名使用，內文也要改寫到不會被逐字搜尋回原文
-
-- **來源標註一律用不透明 `source_id`（全模式適用）**：所有產出的持久化檔案——概念檔、`INDEX.md`、鉤子矩陣、概念簡報、產能表、月複盤、標準輸出、CSV——的「來源」欄位都只寫下方 schema 的四個欄位，不寫原文、不寫帳號或暱稱、不寫貼文網址：
-  - 格式：`來源類型-日期-流水號`（`review-20260715-014`、`comment-20260718-003`、`winnerad-20260620-002`、`productfact-20260729-001`）
-  - **`source_id` ↔ 原始內容的對照表只留在 `inputs/` 這種受控位置**，不進 `outputs/`、不進版本控制、不隨交付物給客戶或外部審核者。理由：把逐字原文或貼文連結寫進交付物，等於把去識別化白做了
-  - **這條對「給人看的說明欄」一樣適用**：交付物裡常見的「依據：…」「來源：…」這種自然語言欄位，只能寫**來源類型＋`source_id`**（「依據：官網服務條款 `productfact-20260729-004`」），**不得寫成「使用者說……」或貼上來源頁面網址**。加一個人看得懂的說明欄是好事，但它不是繞過去識別化的後門——`ads` 技能的 [`rsa-output-spec.md`](../../ads/references/rsa-output-spec.md) 引用的是這一條
-  - **唯一可以出現在交付物裡的網址，是廣告本身要用的目標網址**（RSA 最終網址、附加連結網址、到達頁網址）：限自家公開、不含個資、**不帶 query 與 fragment**的頁面。這是廣告的功能欄位，不是來源標註，兩者不要混為一談
-  - **這幾個欄位是 fail-closed 的**：任何輸出格式（Markdown 概念檔、`INDEX.md`、CSV、貼進簡報的清單）缺少 `source_id`（視覺資產為 `asset_id`）／`evidence_class`／`source_license`／`publish_status` 任一欄時，**不要輸出那一列**，改回報「這個版本缺來源標註，補上才能交付」。`public_cited` 來源另外必須帶 `attribution`（登記簿另需 `授權條款`／`可引用範圍`）。每個宣稱另需 `@locator`。理由見下一段
-  - **欄位齊全只是第一關**：這幾個 ID 還要在 `inputs/SOURCES.md` 登記簿裡**解析得到、且欄位相符**才算過關，見下一節「來源登記簿」
-
-### 來源登記簿（`inputs/SOURCES.md`）——`source_id` 必須解析得到，格式對不算數
-
-**只檢查格式是擋不住捏造的。** 一個模型要生出 `productfact-20260729-001/A/brand_owned` 這種外觀完全合法的字串，成本是零；如果驗證只做到「格式對、四個欄位都在」，那麼「有 provenance」跟「沒有 provenance」對輸出品質沒有任何差別，整套 schema 只是儀式。**所以 `source_id` 必須指向一份真的存在、且事先登記過的來源。**
-
-**最小可行做法：一份受控的登記簿檔案 `inputs/SOURCES.md`**，一列一筆來源，欄位如下：
-
-| 欄位 | 說明 |
-|---|---|
-| `source_id` | 唯一鍵，格式見下。**登記簿裡不得有重複值** |
-| `evidence_class` | `A`–`F`，登記時決定 |
-| `source_license` | `brand_owned`／`research_only`／`authorized_verbatim`／`public_cited`／`licensed_logo` |
-| `來源類型` | 評論／留言／贏家廣告／產品文件／案例研究／媒體報導／授權見證／Logo／影像素材 |
-| `檔案路徑` | 這份來源**實際存放在 `inputs/` 底下的相對路徑**（截圖、`.md`、授權書 PDF）。空的不算登記 |
-| `內容雜湊` | 登記當下該檔案內容的 SHA-256（前 16 碼即可）。**用途是偵測登記後來源被換掉**，見下方「宣稱層核對」 |
-| `取得／登記日期` | `YYYY-MM-DD` |
-| `授權證明` | `authorized_verbatim`／`licensed_logo` 必填：授權書檔案路徑或授權紀錄編號 |
-| `attribution` | `public_cited` 必填：**可對外顯示的出處字串**（例如「經濟部統計處 2026 年 3 月批發零售業營業額統計」）。這一欄是公開資訊，是唯一允許隨交付物輸出的來源描述 |
-| `授權條款` | `public_cited` 必填：**可稽核的條款出處**——條款頁面存檔的檔案路徑、授權合約編號，或素材庫／出版單位的授權方案名稱。「網路上找得到」不算條款 |
-| `可引用範圍` | `public_cited` 必填，二選一：`rewrite_only`（只允許引用資料、自己寫句子）或 `verbatim_ok:<範圍>`（條款明文允許逐字，`<範圍>` 寫明允許的字數／段落數與是否限定非商業）。**看不懂條款、條款沒寫、或條款只寫「可分享」→ 填 `rewrite_only`** |
-
-**`source_id` 格式（嚴格）**：`<來源類型代碼>-<YYYYMMDD>-<NNN>`
-
-- 來源類型代碼**限這幾個**：`review`／`comment`／`winnerad`／`productfact`／`casestudy`／`mediareport`／`testimonial`／`logo`／`visual`。自創代碼不合法
-- `YYYYMMDD` 是**登記日期**，不是產出日期；`NNN` 是該類型該日的三位流水號
-- 全登記簿唯一。撞號時不覆寫，往下取下一個號
-
-**登記是獨立步驟，不能跟產出文案在同一步默默發生——這是整套機制的支點。** 產出流程**只能讀登記簿，不能自己新增一列**。要新增一列時：
-
-1. 停下產出，明講「這個宣稱需要一筆新來源」
-2. 把要登記的那一列（含檔案路徑）**列出來給使用者確認**，說明它會被用來支撐哪一句宣稱
-3. 使用者確認、且 `inputs/` 底下**確實有那個檔案**之後，讀取該檔案、算出 `內容雜湊` 一併寫進登記簿，再回頭繼續產出
-
-**為什麼這樣就擋得住捏造**：捏造一列的成本，從「在輸出裡打一串字」變成「當著使用者的面宣稱某個檔案存在」。前者沒有人會發現，後者使用者看得到、也查得到。
-
-**輸出前的逐筆解析（fail-closed，六個檢查）**：每一則資產的**每一個**三元組都要跑完：
-
-1. **解析得到**：`source_id` 在登記簿裡查得到那一列。查無 → `blocked_unsupported_claim`
-2. **唯一**：登記簿裡只有一列用這個 `source_id`。重複 → 停下報錯，整批不輸出（登記簿壞了，不是單一則的問題）
-3. **欄位相符**：輸出裡寫的 `evidence_class` 與 `source_license`，跟登記簿那一列**逐字相同**。產出端**不得覆寫、不得「升級」**（把登記為 `B` 的評論在輸出裡寫成 `E` 是最典型的作弊路徑）→ 不符即 `blocked_unsupported_claim`
-4. **必填的證明在位**：`authorized_verbatim`／`licensed_logo` 那一列的「授權證明」欄不得為空；`public_cited` 那一列的 `attribution`、`授權條款`、`可引用範圍` 三欄都不得為空 → 任一為空即 `blocked_needs_permission`
-5. **來源檔案沒被換掉**：重新讀 `檔案路徑`，重算雜湊，跟登記簿的 `內容雜湊` 比對。檔案讀不到 → `blocked_unsupported_claim`；雜湊不符 → **整批停下**，回報「`<source_id>` 的來源檔案在登記之後被修改過，所有引用它的宣稱都要重新核對並重新登記」。理由：沒有這一關，登記一份真實檔案之後把內容換成別的，前四關全部照過
-6. **宣稱真的出現在來源裡**（下一段獨立說明）
-
-### 宣稱層核對：ID 對得上不等於這句話有根據
-
-**前五關擋得住「引用一份不存在的來源」，擋不住「引用一份真實但無關的來源」。** 拿一筆真的登記過的 `productfact-20260729-001`（內容是保固條款）去掛在「平均省 10 小時」這句宣稱底下，ID 解析得到、欄位相符、雜湊也對——**六關少了第六關，這種宣稱會原樣輸出**。所以每一個宣稱都要標出它在來源裡的位置，並在輸出前回去對。
-
-**登記時要一起記的：`claim locator`**（記在該宣稱的 provenance 紀錄裡，不是登記簿裡——同一份來源可以支撐多個不同宣稱）：
-
-| 來源型態 | `locator` 寫法 |
-|---|---|
-| `.md`／`.txt`／網頁存檔 | 段落編號或小節標題（`§3 保固範圍`、`para:12`） |
-| PDF／簡報 | 頁碼＋段落（`p.4 para.2`） |
-| 表格／CSV／統計資料 | 欄名＋列鍵（`col:平均處理時間, row:2026Q1`） |
-| 截圖（贏家廣告、評論截圖） | 圖上的欄位名稱（`primary_text`、`review_body`），且該截圖必須另有一份逐字轉錄的 `.md` 存在 `inputs/`，核對對轉錄檔做 |
-
-**輸出前的核對動作（逐宣稱，不是逐則）**：
-
-1. 依 `locator` 到來源檔案的那個位置，**把那一段實際讀出來**
-2. 問一句：**這一段的內容，撐不撐得起這句宣稱的字面意思？**——數字要對得上（宣稱寫 3 天，來源寫 3-5 個工作天 → 撐不住）；比較級要有被比較的對象；比例要看得到分子分母
-3. 讀不到那個位置、那段內容跟宣稱無關、或只是「語意上相近但數字／範圍不同」→ **`blocked_unsupported_claim`，不輸出這一則**，回報「宣稱『…』在 `<source_id>` 的 `<locator>` 找不到對應內容」
-4. **`locator` 欄位空著＝沒過關**，等同第 6 關失敗。不接受「這是整份文件的大意」這種寫法——大意支撐不了具體宣稱，要嘛指得出位置，要嘛把宣稱改到指得出位置為止
-
-**這一關不能靠印象作答。** 核對的定義是「重新開啟來源檔案的那個位置讀一遍」，不是「我記得那份文件裡有講」。產出流程若無法讀取來源檔案（例如來源只有紙本、或檔案在無權限的位置），該宣稱一律 `blocked_unsupported_claim`。
-
-**登記簿不存在或讀不到時**：**不是照常產出**，也不是自己補一份。要做的是回報「找不到 `inputs/SOURCES.md`，無法驗證任何來源」，並帶使用者跑一次上面的登記流程把手上的材料登記進去。**「先產出、之後再補登記」是禁止的**——補登記的時候沒有人記得那句話當初是根據什麼寫的，補出來的就是事後合理化。
-
-**登記簿本身是受控資料**：它含有 `檔案路徑`，指向可能未去識別化的原始內容，所以它跟 `inputs/` 其他東西一樣**不進 `outputs/`、不進版本控制、不隨交付物給客戶**。交付物裡出現的只有 `source_id`（與 `public_cited` 的 `attribution`）。
-
-### provenance schema：綁在**每一則資產**上，不是綁在整組上
-
-一組 RSA 有 15 個標題 4 個說明，一張靜圖有標題與內文，它們**各自的證據來源不一樣**——把整組壓成一個 `source_id` 是最常見的漏洞：只要其中一個欄位有評論來源，整組就被標成有根據，其他欄位裡的數字與比較級就這樣混了進去。
-
-**每一則可獨立上稿的文字資產（一則標題、一則說明、一則內文、一則額外資訊）都要有自己的一筆 provenance 紀錄。** 這筆紀錄分兩層——**來源層**（可以有很多筆，描述證據）與**成品層**（整則一個值，描述這一則能不能對外用）：
-
-**來源層：`source_id` ／ `evidence_class` ／ `source_license` 是同一筆紀錄的三個欄位，綁在一起，多來源時列多筆**
-
-| 欄位 | 值 | 意思 |
+| Class | Source | Missing it means |
 |---|---|---|
-| `source_id` | `來源類型-日期-流水號` | 這一筆證據是哪一份東西。**必填** |
-| `evidence_class` | `A`／`B`／`C`／`D`／`E`／`F` | 這一筆**這個 `source_id`** 屬於哪一類（對應上方「證據類別」表）。**必填** |
-| `source_license` | 見下表 | **這一份來源本身可以怎麼用**（能不能逐字引、要不要標出處）。**必填** |
+| **A. Product facts** | Brand's own spec, ingredients, features, price, service — registered product docs (`productfact-*`), `.agents/profile.md`'s own Brand/Main Products/Competitors sections (`productfact-*`, see note below), or the user's own statement this conversation (`usersaid-*`, weakest sub-type of A, see Conversation-fact path) | Nothing can be written — **the only hard stop condition** |
+| **B. Customer language** | `inputs/reviews/`, `inputs/comments/` (register for voice, not verbatim) | Copy falls back to generic "sounds like an ad" phrasing, angle sourcing narrows sharply |
+| **C. Existing performance signal** | `inputs/winning-ads/` (hooks/structures this brand already proved) | Nothing validated to extend from, every concept is an untested hypothesis |
+| **D. Authorized verbatim testimonial** | Real review + auditable subject authorization | Review-card and testimonial-stack templates can't run |
+| **E. Substantiable numbers** | Case studies, product analysis, survey results | Stat-callout and competitor-callout templates can't run |
+| **F. Real media coverage** | Actually covered you, and logo-usage terms permit it | Press-mention template can't run |
 
-**成品層：`publish_status`，整則資產一個值**
+**`.agents/profile.md` as a source**: `profile.md` ([`../../contracts/profile-v1.md`](../../contracts/profile-v1.md)) is a standing, already-confirmed product-fact document — its Brand/Main Products/Competitors sections cite as `productfact-<YYYYMMDD>-<NNN>` (date is this run's date), locator pointing at the section (`@profile.md#Main Products`), on either source path, without a separate `inputs/SOURCES.md` row — the file itself is the confirmed record, the same way the onboarding intake already established it. Sections it doesn't cover (Margin Basis, Target CPA, Calibrated Thresholds) aren't ad-facing product facts and don't route through this note.
 
-| 值 | 意思 |
+**Entry rule**: only text-based product-fact sources (`productfact-*`/`usersaid-*`) count as A — a product photo alone answers nothing about what the product is or does; third-party visual assets (stock photos, third-party logos) never count toward any `evidence_class` at all (see Visual asset provenance, below).
+
+1. **No A → stop**, ask the user for product information. This is the only "produce nothing" case (a missing registry isn't this — that's a path switch, see above).
+2. **A present, B and C both empty** (new brand, or the user only described the product in conversation) → **degraded batch, not a stop and not business-as-usual**:
+   - Tag the top of `INDEX.md`: `Basis: degraded (product facts only, no customer language or performance signal)` — conversation-fact path: `Basis: degraded (self-reported product facts only, no source registry, no customer language or performance signal)`
+   - **Batch cap = (templates passing the eligibility gate) × 3**, not a fixed 50 — the ceiling on concept count is the number of real angles available, not the number of template slots; forcing 50 out of one angle in ten layouts is padding, the same failure as fabrication in a different shape
+   - Disclose: "produced without customer-language input, treat as an untested hypothesis; rerun once you have a few performing ads or 50-100 reviews"
+3. **A present, and B or C has material → normal batch**, standard count per the user's ask, still gated per template.
+4. **D/E/F only gate individual templates**, they never block whether the batch runs at all (gate table lives in [`static-ad-templates.md`](static-ad-templates.md)).
+
+**Per-template cap is 6 variations regardless of batch type.** When skipped-template quota gets redistributed to eligible templates and that hits the cap, cut the total and say so in `INDEX.md` ("actual N, below the requested M, because only X templates passed the gate at 6 each") — never force past the cap to hit a round number; the last few of an over-stuffed template are near-duplicates that test nothing.
+
+## Data-handling principles (data minimization, mandatory)
+
+- **Collect only public, purpose-limited content the user has rights to use.** Public reviews and public ad comments qualify; **private messages and private one-to-one feedback on any channel are excluded by default** (region-specific channels most likely to tempt a misread as "public" are named in `geo/<code>.md`), unless the subject has explicitly consented to marketing use.
+- **"Publicly visible" ≠ "usable as paid-ad testimonial"** — two different things:
+  - **Internal voice research (lower risk)**: mining reviews for how this audience describes their problem, rewritten in your own words, unquoted, unattributed — this package's default use.
+  - **Named external testimonial / verbatim-or-near-verbatim quoting (higher risk, needs separate authorization)**: presenting a review's original or near-original text as a named or identifiable customer's testimonial (named or not — distinctive enough phrasing plus a screenshot or avatar can still be identifiable) needs authorization beyond "they posted it publicly"; most platforms' review/comment ToS don't transfer re-use rights either.
+- **De-identification isn't absolute**: stripping name/phone/email/account ID is baseline, but distinctive phrasing can still be searched back to the original post — genuine anonymization means rewriting the content, not just removing the name.
+- **Sourcing always uses an opaque `source_id`, everywhere**: every persisted output (concept files, `INDEX.md`, hook matrix, briefs, roadmap, monthly retro, standard output, CSV) records only the four fields defined in Provenance schema below — never the original text, handle, or post URL.
+  - Format: `type-date-serial` (`review-20260715-014`, `comment-20260718-003`, `winnerad-20260620-002`, `productfact-20260729-001`, `usersaid-20260730-001`).
+  - **The `source_id` ↔ original-content mapping lives only in `inputs/`** (a controlled location) — never in `outputs/`, never in version control, never handed to a client or external reviewer.
+  - **This applies to human-readable fields too**: a "based on: …" prose field may only carry the source type + `source_id` ("based on the official ToS, `productfact-20260729-004`"), never the original quote, handle, or URL — the point of the opaque code is exactly to make this field safe to hand over. A user-stated fact has its own code (`usersaid-*`); never write "the user said…" as a substitute — that phrase can't be traced back to a specific statement.
+  - **These fields are fail-closed**: any output format missing `source_id` (visual assets: `asset_id`) / `evidence_class` / `source_license` / `publish_status` doesn't get that row — report "this version is missing source attribution, needed before delivery" instead. A `public_cited` source additionally needs `attribution`. Every claim additionally needs `@locator`.
+  - **The only URL that belongs in a deliverable is the ad's own destination URL** (RSA final URL, sitelink, landing page) — brand-owned, no PII, no query string or fragment. That's a functional field, not source attribution; don't conflate the two.
+
+## Source registry (`inputs/SOURCES.md`) — `source_id` must resolve, matching format isn't enough
+
+**Format-only checking can't stop fabrication.** Producing a plausible-looking `productfact-20260729-001/A/brand_owned` string costs nothing; if verification stops at "the four fields are present and well-formed," provenance is theater. **`source_id` must point at something that genuinely exists and was registered before this run** — the registry path points into files registered under `inputs/`, the conversation-fact path points into a fact list the user has already reviewed (see below). Both share the property that the source was on the table before output happened, not produced on the spot to justify it.
+
+**Minimum viable approach: one controlled file, `inputs/SOURCES.md`**, one row per source:
+
+| Field | Notes |
 |---|---|
-| `publishable_rewrite` | 這一則是改寫過的文案，可以上稿 |
-| `publishable_verbatim` | 這一則含逐字或近逐字引用，且**每一筆**被逐字引用的來源都通過下方相容矩陣，可以上稿 |
-| `blocked_needs_permission` | 內容本身沒問題，但引用方式超出來源授權範圍、或該標的出處標不出來——**不輸出這一則**，改回報要去取得什麼授權 |
-| `blocked_unsupported_claim` | 有宣稱找不到對應等級的證據撐——**不輸出這一則**，改回報缺哪一類證據 |
+| `source_id` | Unique key, format below. No duplicates in the registry. |
+| `evidence_class` | `A`-`F`, set at registration. |
+| `source_license` | `brand_owned` / `research_only` / `authorized_verbatim` / `public_cited` — no dedicated value for third-party visuals; those are always `blocked_needs_permission` (see Visual asset provenance). |
+| Source type | review / comment / winning ad / product doc / case study / media coverage / authorized testimonial / logo / visual asset. |
+| File path | Relative path under `inputs/` where this source actually lives. Blank doesn't count as registered. Sole exception: `positioning-*` records `.agents/positioning.md` (see Positioning file as source). |
+| Content hash | **Full** SHA-256 of the file's content at registration time (64 lowercase hex chars, never truncated). Detects post-registration tampering (see Claim-level check). Lowercase both sides before comparing the full 64 chars; malformed (wrong length, non-hex), blank, or non-matching after lowercasing → block (`blocked_unsupported_claim`, or a full stop — see "Source file untouched," below). |
+| Registration date | `YYYY-MM-DD`. |
+| Authorization proof | Required for `authorized_verbatim`: file path or record ID of the authorization. **Testimonial photos additionally need both** a portrait-use consent **and** proof the photo's copyright itself belongs to the brand (not an outside photographer who never transferred it) — missing either counts as blank, see Testimonial photos, below. |
+| `attribution` | Required for `public_cited`: the citable, publishable source string (e.g., "National statistics agency, March 2026 wholesale/retail figures") — public information, the only source description allowed to ship with the deliverable. |
+| License terms | Required for `public_cited`: an auditable pointer to the terms (archived terms page, license agreement ID, named license plan). "Findable online" isn't terms. |
+| Citable scope | Required for `public_cited`, exactly two legal values: `verbatim_ok:<scope>` (terms explicitly permit verbatim reproduction — scope states the word/paragraph limit and any non-commercial restriction) or `rewrite_only` (terms explicitly permit commercial ad use but not verbatim reproduction). Unclear terms, terms that don't mention advertising/commercial use, or terms limited to non-commercial sharing → neither value is legal, leave blank (fails "required proof in place," below). **Don't fill `rewrite_only` as a safe default when terms are unclear** — that disguises "unclear license" as "confirmed rewrite-only." |
 
-`source_license` 的可用值（**描述的是來源怎麼用，不是成品能不能發**）：
+**`source_id` format (strict)**: `<type-code>-<YYYYMMDD>-<NNN>`
 
-| 值 | 用在哪一類來源 | 允許的引用方式 |
+- Type code is one of: `review` / `comment` / `winnerad` / `productfact` / `casestudy` / `mediareport` / `testimonial` / `logo` / `visual` / `usersaid` / `positioning`. No invented codes. `usersaid` is conversation-fact-path only, never registered in `inputs/SOURCES.md` (a registry-path project uses `productfact` for the same fact). `positioning` is legal on either path, only when `evidence_level` is exactly `sourced` (see Positioning file as source).
+- `YYYYMMDD` is the **registration date**, not the production date; `NNN` is that day's three-digit serial for that type.
+- Unique across the whole registry — collisions take the next available number, never overwrite.
+
+**Registration is its own step, never a silent side effect of writing copy.** Adding a row: stop production, say "this claim needs a new source"; list the proposed row (with file path) for the user to confirm; only after confirmation and after the file genuinely exists under `inputs/` does it get read, hashed, and registered — then production resumes. This is what makes fabrication expensive: from "type a string" to "claim a file exists in front of the user," and the user can check.
+
+### Output-time resolution (fail-closed, six checks per triple)
+
+Run for every triple on every asset (registry path — the conversation-fact path runs the equivalent four checks, see below):
+
+1. **Resolves**: `source_id` is a row in the registry. Not found → `blocked_unsupported_claim`.
+2. **Unique**: only one row uses this `source_id`. Duplicate → stop, don't ship the batch (the registry itself is broken).
+3. **Fields match**: the `evidence_class`/`source_license` in the output match the registry row verbatim — output never overwrites or "upgrades" (writing a registered `B` review as `E` is the classic cheat). Mismatch → `blocked_unsupported_claim`.
+4. **Required proof in place**: `authorized_verbatim` needs a non-blank authorization field (testimonial photos need both conditions above); `public_cited` needs non-blank `attribution`, license terms, and a citable scope that's one of the two legal values. Any gap → `blocked_needs_permission`. A `source_license` value outside the four legal ones fails this check outright.
+5. **Source file untouched**: re-read the file, recompute the full SHA-256, compare lowercase-to-lowercase against the registered hash. Unreadable → `blocked_unsupported_claim`; malformed or blank registered hash → treat as failed, stop the batch; mismatch after lowercasing → **stop the batch**, report "`<source_id>`'s source file was modified after registration, every claim citing it needs re-verification and re-registration." **`positioning-*` is the sole exception** — a mismatch there runs the re-verify/whitelist flow in Positioning file as source, not a full stop.
+6. **The claim actually appears in the source** (next section).
+
+### Claim-level check: a resolvable ID isn't the same as a supported claim
+
+The first five checks catch "citing a source that doesn't exist," not "citing a real but unrelated source." Attaching a genuine `productfact-20260729-001` (warranty terms) under "saves an average of 10 hours" passes all five — only the sixth catches it.
+
+**Recorded at registration: a `claim locator`** (kept in the claim's own provenance record, not the registry — one source can support multiple distinct claims):
+
+| Source type | Locator form |
+|---|---|
+| `.md`/`.txt`/archived webpage | Paragraph number or heading (`§3 Warranty scope`, `para:12`) |
+| PDF/deck | Page + paragraph (`p.4 para.2`) |
+| Table/CSV/stats | Column + row key (`col:avg_handling_time, row:2026Q1`) |
+| Screenshot (winning ad, review) | The labeled field on the screenshot (`primary_text`, `review_body`), with a full verbatim transcript kept as `.md` in `inputs/` |
+| Conversation self-report (`usersaid-*`) | The numbered line in the conversation fact list (`@usersaid-20260730-001`) |
+
+**Output-time check (per claim, not per asset)**: open the source at that locator, read that passage, ask — does it support the claim's literal meaning? (numbers must match — the claim says 3 days, the source says 3-5 business days is a mismatch; a comparative needs the comparison target; a ratio needs numerator and denominator). Unresolvable locator, unrelated content, or "same gist, different number/range" → `blocked_unsupported_claim`, don't ship, report "claim '…' isn't supported at `<source_id>`'s `<locator>`." **A blank `locator` fails this check** — "that's the gist of the whole document" doesn't count; either point to a specific location or narrow the claim to one that can be pointed to. This can't be answered from memory — it means re-opening the source at that location, not recalling that the document said something like that; a source that can't be read at all (paper-only, inaccessible location) blocks any claim depending on it.
+
+**No registry, or unreadable**:
+- **`inputs/SOURCES.md` doesn't exist** → conversation-fact path (see below). Not "produce as usual," not "build a registry on the user's behalf" — the only available class is what the user says about the product this conversation.
+- **File exists but won't parse, or has a duplicate `source_id`** → **stop and report**, "`inputs/SOURCES.md` is unreadable or malformed, can't verify any source," help fix it. Never falls back to the conversation-fact path — that would make "corrupt the registry" the easy way out.
+
+**Never**: "produce first, register later" — by the time it's registered, nobody remembers what actually backed that sentence at the time. Same for the conversation-fact path: the fact list is finalized and confirmed before production starts, not reconstructed mid-batch from a vague memory of what the user said.
+
+**The registry itself is controlled data**: it carries file paths into potentially non-de-identified content, so it stays out of `outputs/`, version control, and client deliverables, same as the rest of `inputs/`. Only `source_id` (and `public_cited`'s `attribution`) shows up in a deliverable.
+
+## Conversation-fact path: using what the user says when there's no registry
+
+No registry doesn't mean no source. "We run an online ordering system, live the day we launch" is a **brand's own statement about its own product** — unverified, but not fabricated either; those are different things. This path treats it as a source with a code, a class, and a limit — not silence, not a verified fact.
+
+**Code**: `usersaid-<YYYYMMDD>-<NNN>`, date is this conversation's date, `NNN` is this conversation's fact serial.
+
+**Fixed binding, no upgrades**: `usersaid-*` only ever pairs with `evidence_class: A` and `source_license: brand_owned`. Writing it as `B`-`F` is fabrication — "the user said our repeat-purchase rate is 80%" doesn't become an `E`-class substantiated number by virtue of being said; that's `blocked_unsupported_claim`.
+
+### Fact list replaces the registry (same rigor, not a lighter version)
+
+A registry blocks fabrication by making the user confirm a file exists. Conversation has no file — the equivalent is reading the user's own statements back to them:
+
+1. **List it**: before production, list a conversation fact list in the reply (in the reply, not written to `outputs/`) — one line each: `usersaid-20260730-001 | stated by the user this conversation | can accept orders same-day as launch`.
+2. **Only what they actually said**: nothing inferred, assumed from the product category, or filled in from "products like this usually…" — that's the same fabrication as a fake registry row, no more excusable for happening in conversation.
+3. **Confirm**: ask "does this list match what you told me — anything wrong or missing?" and wait before producing. The user can see on the spot whether they said it — the same cost structure that makes the registry path work.
+4. **Per-claim check**: each output claim's `@locator` names the fact-list line number (`@usersaid-20260730-001`); checking means returning to that line and asking whether it supports the claim's literal meaning — same standard as Claim-level check above.
+
+| Registry path's six checks | Conversation-fact equivalent |
+|---|---|
+| 1 Resolves | List has that entry number; not found → `blocked_unsupported_claim` |
+| 2 Unique | Serial unique this conversation; collision takes next number |
+| 3 Fields match | `usersaid-*` is fixed `A`/`brand_owned`; anything else doesn't match |
+| 4 Required proof | A-class needs no authorization proof; `D`/`F` classes needing authorization have no equivalent on this path — the templates that need them get skipped |
+| 5 Source untouched | List is final once the user confirms it; no rewrite mid-batch — a real addition means listing again for reconfirmation |
+| 6 Claim in source | The per-claim check above |
+
+The fact list is controlled data like the registry — never written to `outputs/`; only `source_id` appears there.
+
+### What this path can and can't write
+
+Class-A limits apply as-is (see Provenance schema's evidence-class table below); the only addition is a "verify before launch" obligation. This table covers `usersaid-*` sources specifically — a batch that also has a qualifying `positioning-*` source (see next section) follows that source's own class instead.
+
+| What the user says in conversation | Usable in creative? |
+|---|---|
+| Product/service description, features, plans, fit, price | Yes |
+| Product's own spec numbers ("orders same-day," "10-year warranty," "30 stores nationwide") | Yes, but **must go on the "verify before launch" list at delivery** — this becomes a consumer-facing promise on the strength of one spoken line |
+| Outcome numbers ("saved a customer 10 hours," "revenue up 30%") | **No.** Needs `E`. Rewrite without the number, or drop the field |
+| Social proof ("lots of stores use it," "high repeat rate," "thousands of customers") | **No.** Needs `E` |
+| Competitive comparison ("cheaper than X," "only one in the industry") | **No.** Needs `E` |
+| Named/identifiable testimonial, media logo | **No.** Needs `D`/`F` + matching authorization |
+| Efficacy or health claims | **No** — same regulated-industry mandatory load as always, no exemption on this path |
+
+### Required disclosure at delivery
+
+- **Factual basis**: this batch's product facts come from what the user said this conversation, not verified against docs, testing, or a third party. Any claim also resting on `positioning-*` names which section of `.agents/positioning.md` backs it, and that it's an already-verified section.
+- **What to verify before launch**: which claims use spec numbers, what evidence each needs (product doc, dashboard screenshot, test record), and which claims were rewritten or dropped for lack of `E`/`D`/`F`.
+- **Upgrade path**: register product docs, reviews, and winning ads under `inputs/` to move to the registry path next time — that unlocks outcome numbers and social proof. When a batch already has `positioning-*`-backed `E` claims, another path is registering the underlying verified material (case study, survey, third-party report) directly, so future runs get full hash and claim-level checks instead of relying on the positioning document's say-so.
+
+Batch size follows the degraded-batch rule (Evidence classes, above) — **the conversation-fact path is necessarily B-and-C-empty, there's no other case**: cap = eligible templates × 3. `INDEX.md`'s basis tag reflects whether `positioning-*` backs part of the batch — the two tags aren't interchangeable: `Basis: degraded (self-reported product facts only, no source registry, no customer language or performance signal)` when nothing else backs it, versus `Basis: degraded (self-reported product facts + positioning-verified claims, no source registry, no customer language or independent performance signal)` plus a list of which claims rely on `positioning-*` when at least one does — reusing the "self-reported only" tag when material actually backs some claims misleads the reviewer.
+
+## Positioning file as source: `positioning-*` (only when `evidence_level` is exactly `sourced`)
+
+`.agents/positioning.md` defaults to unverified user self-report, so it can't back a factual ad claim — `SKILL.md`'s "before you start" gate 5. **The sole exception**: frontmatter `evidence_level` exactly `sourced` (legal values and meaning per [`../../contracts/sister-product-compat.md`](../../contracts/sister-product-compat.md) — not redefined here) means every claim across the three sections has material backing. A document at that level can register as a source; without the code, its claims all fail the claim-level check regardless of how well-verified they actually are.
+
+**Code**: `positioning-<YYYYMMDD>-<NNN>` — registration date (registry path) or this conversation's date (conversation-fact path), `NNN` the ordinary three-digit serial. **Different claims from the same document get different `source_id`s** — a registry row (and its `evidence_class`) covers exactly one claim; a spec-fact sentence and an outcome sentence from the same document are two rows (`positioning-20260730-001` for the spec claim, `-002` for the outcome claim), never one ID reused with the output silently switching its class.
+
+**All five conditions required, one missing means unusable** (falls back to gate 5's default: rewrite the claim without numbers/comparatives, or skip the template and log why — never an error, never a stop):
+
+1. The file is `.agents/positioning.md` itself — no other `.agents/` file qualifies.
+2. `evidence_level` is exactly `sourced`. `mixed`/`assumed`/missing/unrecognized/contract file unreadable → unusable.
+3. The claim sits in one of the four fixed sections or `## Research basis`, and is one `evidence_level` actually marks as verified — content elsewhere in the file doesn't ride along on this code.
+4. The document passed `SKILL.md`'s gates 1-3 (schema, status, non-vacuous content). Failing those means "no positioning document" to begin with.
+5. **No signal conflict**: `source` is a material-verification value (`material_analysis`/`mixed` only — not `user_self_report`/`user_confirmed`). `evidence_level: sourced` sitting alongside a non-material-verified `source` (typically after `quick-angle` does a field-level merge that resets `source` but leaves the older `evidence_level` untouched) means the fields describe two different points in time → treat as stale, code unusable, same fallback as condition 2.
+
+**`evidence_class` follows what the claim is about**, mirroring gate 5's exception:
+
+| Claim content | Registers as |
+|---|---|
+| Product spec, service content, feature description, the product's own numbers | `A` |
+| Outcome numbers, competitive comparison, market position, a computable social-proof figure | `E` |
+| Customer-voice register (`B`), named/identifiable verbatim testimonial (`D`), media coverage/logos (`F`) | **Unusable** — these need raw material and subject authorization a positioning document can't supply; skip the template as usual |
+
+**`source_license` is judged claim-by-claim, never once for the whole document; the finished asset never gets `publishable_verbatim`** (a positioning file paraphrases the underlying material — the right to quote verbatim stays with that original source):
+
+1. **The underlying source can be resolved, verified, and itself passes its own `source_license`'s fail-closed check** (registry path: registered in `inputs/SOURCES.md` with matching class/license, `public_cited` sources have all three required fields; conversation-fact path: the underlying source is separately listed in the fact list with equivalent authorization info confirmed by the user) → **register and cite that underlying source directly** (`casestudy-*`/`mediareport-*`/etc.), not `positioning-*` — a more precise, verifiable source supersedes this code.
+2. **Plainly the brand's own product fact** (the fixed sections describing the brand's own spec/service/feature/price, phrased as "our product is…," not relaying an external finding) → `positioning-*`/`brand_owned`, can be `publishable_rewrite`.
+3. **Everything else — including "the positioning file names a third-party source in prose, but there's no resolvable underlying source with license fields"** — a line reading "per XX Institute's 2026 statistics" is secondhand relay, not an auditable license chain; no underlying source means no `license terms`/`citable scope` to check. **This case is always `blocked_needs_permission`** — never relabel it `public_cited` off the positioning document's own attribution text; use it only as directional backing (rewrite without numbers/comparatives, or skip the template and log why).
+
+This is a deliberately safety-first, durable design choice: `positioning-*` flows smoothly for brand-owned claims (case 2); third-party-sourced claims block without a verifiable license chain (case 3), regardless of whether the positioning file names an origin — `evidence_level: sourced` guarantees the claim has material backing, not that the underlying material's license chain is auditable; those are different guarantees. In practice, `A`-class claims (spec, own numbers) mostly land in case 2; `E`-class claims (outcome numbers, comparisons, social proof) are usually research findings and mostly land in case 3 — blocked absent the user separately registering the underlying source with its license fields (case 1).
+
+`locator` points into the positioning document, same form as the `.md` row in the locator table above (`@§Why we win`, `@§Research basis para.2`). The check is unchanged — read that passage, ask whether it supports the claim's literal meaning. `evidence_level: sourced` lifts the default distrust; it doesn't waive the read-back.
+
+**Registering the code**:
+- **Registry path**: add a row to `inputs/SOURCES.md`, file path field is `.agents/positioning.md` — the sole exception to "file path must be under `inputs/`," because this is the project's own file, not third-party material carrying someone else's PII. Content hash as usual, **plus a `body hash` and a frontmatter snapshot** (see Hash-mismatch handling, next) — a mismatch doesn't trigger the ordinary "stop the batch," it runs the whitelist flow below instead.
+- **Conversation-fact path**: list alongside `usersaid-*` entries: `positioning-20260730-001 | .agents/positioning.md (evidence_level: sourced) | §Why we win: [the claim]`, confirmed by the user like any other list entry. This registration form only supports case 2 above (the brand's own product fact) — a case-1 third-party claim needs its own separate fact-list entry for the underlying source, with the user-confirmed equivalent of `attribution`/citable scope; it can't ride on the `positioning-*` entry alone.
+
+### Hash-mismatch handling (positioning-* only)
+
+`.agents/positioning.md` is a file sister skills (`campaign-strategy`) legitimately keep writing to — writing `strategy_notes`, updating `generated_by` changes the whole-file hash without any registered claim's content having changed. Treating every such write as "content tampered with, stop the batch" would punish normal sister-skill operation. Instead:
+
+**Registered alongside the content hash**: a **body hash** — full SHA-256 of everything after the frontmatter's closing delimiter (heading, fixed sections, sister-skill sections, any unrecognized addition — the entire remainder, nothing skipped), after canonicalizing to UTF-8, normalizing all line endings to `LF`, and stripping trailing whitespace from every line (leading/mid-line whitespace and blank lines untouched). Lowercase hex, same as the content hash. And a **frontmatter snapshot**: every current frontmatter field, one `<field>: <value>` per line sorted by field name, scalar values only — **any field whose value contains a newline, or isn't a scalar (nested/list), doesn't get serialized; a mismatch touching that field is automatically treated as non-whitelisted** (a multi-line value could otherwise be crafted to look like two separate fields in the flattened snapshot, defeating the whitelist comparison — rejecting it outright is simpler and safer than adding escaping rules).
+
+On mismatch:
+
+1. Recompute both the whole-file content hash and the body hash.
+2. **Body hash differs → block outright, no re-verify, no re-registration.** Any change to the substantive content — a new sentence, an added qualifier, a whole new section — means this file's meaning may have shifted; "the sentence at the registered locator is still there verbatim" is no longer sufficient on its own, since a qualifier added elsewhere can invert meaning without touching that sentence. Report "the body of `.agents/positioning.md` has changed since registration, every claim from this source needs re-verification and re-registration"; this source is `blocked_needs_permission` until the user confirms.
+3. **Body hash matches, only the whole-file hash differs** → the difference is confined to frontmatter. Regenerate the frontmatter snapshot and diff it line-by-line against the registered one to find which fields actually changed. (If no field differs but the whole-file hash still doesn't match, the difference is pure formatting noise the canonicalization didn't need to touch — re-register with the new hashes and move on; nothing to whitelist-check.)
+4. **Check each changed field against the whitelist.** `evidence_level`, `source`, and `claim_verified_at` are never whitelisted — these three directly gate how much a claim can be trusted, so any change to them (even paired with a legitimate-looking newer date) blocks rather than auto-passes; this is what stops "hand-edit `assumed` to `sourced`" from riding through as a normal sister-skill update. Whitelisted fields are pure pointer/record metadata that don't affect any claim's credibility: `candidates_considered`, `research_notes`, `angles_considered`, `strategy_notes`, `origin_generated_by`, and the value of `generated_by` — the set `sister-product-compat.md` documents as fields sister skills routinely write.
+5. **All changed fields whitelisted** → re-register this row with the new content hash, body hash, and frontmatter snapshot; note "`positioning-*` re-registered after a legitimate sister-skill frontmatter update, body unchanged, fields changed: [list]." Batch continues, nothing else affected.
+6. **Any changed field isn't whitelisted** (including the three named above, or an unrecognized field) → block, don't auto-reregister, report "`.agents/positioning.md`'s frontmatter has a non-whitelisted change (`<field>`), needs user confirmation before re-registering."
+
+This flow is `positioning-*`-only — every other source type (`productfact-*`/`review-*`/`casestudy-*`/etc.) still gets a full stop on any hash mismatch; those files were never supposed to change post-registration, while `positioning-*` is the one place this package explicitly expects an ongoing legitimate writer.
+
+**State the basis at delivery**: name which section of the positioning document backs each `positioning-*`-sourced claim ("the 'hours saved per week' line is per `.agents/positioning.md`'s `## Research basis` section"), not just "per the positioning file."
+
+**This package reads this field, never writes it.**
+
+## Provenance schema: bound to each asset, not the batch
+
+A batch of 15 headlines and 4 descriptions has 15+4 *different* evidence trails — collapsing them into one `source_id` is the most common failure: one field has a review behind it, so the whole batch reads as grounded, and every other field's numbers and comparisons ride along uninspected.
+
+**Every independently publishable text asset** (one headline, one description, one line of primary text, one extra field) **gets its own provenance record**, in two layers — **except a purely angle-driven line that makes no factual claim at all** (a pure hook, a wordplay line, a CTA carrying no product fact): nothing there needs a source to check, so no provenance record applies. The moment a line states or implies anything checkable about the product, outcome, or comparison, it re-enters this schema at whatever evidence class that claim requires (see "`evidence_class` determines what an asset may say," below).
+
+**Source layer — `source_id` / `evidence_class` / `source_license`, one record, multiple rows when multiple sources**
+
+| Field | Value | Meaning |
 |---|---|---|
-| `brand_owned` | 品牌自有資料：產品規格、官網文案、自家案例數據、創辦人故事 | 可自由使用與改寫，可逐字 |
-| `research_only` | 公開評論、廣告留言、競品廣告——只取來當語感與角度參考 | **只能改寫**，不得逐字或近逐字、不得具名 |
-| `authorized_verbatim` | 已取得當事人可稽核授權的見證 | 可逐字引用，須附授權紀錄編號 |
-| `public_cited` | 可公開引用的第三方資料：官方統計、公開研究報告、媒體報導內文 | 可引用，**須依原始條款標示出處**，不得改動數字語意 |
-| `licensed_logo` | 媒體 Logo、認證標章、合作品牌商標 | 只能依該 Logo 使用條款的範圍與版位使用 |
+| `source_id` | `type-date-serial` | Which piece of evidence this is. Required. |
+| `evidence_class` | `A`/`B`/`C`/`D`/`E`/`F` | What class **this `source_id`** falls in (see Evidence classes above). Required. |
+| `source_license` | see table below | How **this source** may be used. Required. |
 
-**為什麼要拆成兩層**：舊版把「來源只能研究參考 vs 已授權逐字」跟「這一則成品能不能上稿」壓在同一個 `license_status` 欄位裡，結果一則完全正常、可以直接上線的產品文案被標成 `internal_research_only`，下游看到只會困惑——那到底是「文案不能對外」還是「來源不能逐字引」？現在來源層答前者、成品層答後者，兩件事各自有欄位。
+**Product layer — `publish_status`, one value for the whole asset**
 
-**兩層之間的相容矩陣（`publish_status` 不是自己填的，是從 `source_license` 推出來的）**：
+| Value | Meaning |
+|---|---|
+| `publishable_rewrite` | Rewritten copy, ships |
+| `publishable_verbatim` | Contains verbatim/near-verbatim quoting, and every quoted source passes the compatibility matrix below, ships |
+| `blocked_needs_permission` | Content is fine but the citation exceeds the source's license, or attribution can't be shown — don't ship, report what authorization is missing |
+| `blocked_unsupported_claim` | A claim has no matching-class evidence behind it — don't ship, report what evidence class is missing |
 
-| `source_license` | 可以標 `publishable_rewrite`？ | 可以標 `publishable_verbatim`？ | 額外必要條件 |
+`source_license` legal values (**describes how the source may be used, not whether the finished asset may ship**):
+
+| Value | Applies to | Permitted use |
+|---|---|---|
+| `brand_owned` | Brand's own material: spec, site copy, own case data, founder story | Free use and rewrite, verbatim allowed |
+| `research_only` | Public reviews, ad comments, competitor ads — voice/angle reference only | **Rewrite only**, never verbatim/near-verbatim, never attributed to a name |
+| `authorized_verbatim` | A testimonial with auditable subject authorization (portrait photos need authorization covering the likeness, not just the text) | Verbatim allowed, cite the authorization record ID |
+| `public_cited` | **Text/data** third-party sources that are publicly citable: official stats, public research reports, media coverage body text — **not for visual assets**, see Third-party visuals below | Citable, must attribute per the original terms, can't alter the number's meaning, and `citable scope` must pass the tightened definition in Source registry above |
+
+**No dedicated license value for third-party visuals**: stock photos, third-party logos, any non-brand-owned photo — none of the four values apply; they never enter `source_license` at all, always `blocked_needs_permission` (see Third-party visuals below).
+
+**Compatibility matrix — `publish_status` is derived from `source_license`, never self-assigned:**
+
+| `source_license` | `publishable_rewrite`? | `publishable_verbatim`? | Extra condition |
 |---|---|---|---|
-| `brand_owned` | ✅ | ✅ **可以**——品牌自有文案逐字使用不需要別人授權 | 無 |
-| `research_only` | ✅（**必須實質改寫**，不得近逐字、不得具名） | ❌ → `blocked_needs_permission` | 改寫到不會被逐字搜尋回原貼文 |
-| `authorized_verbatim` | ✅ | ✅ | 登記簿該列的「授權證明」欄有值 |
-| `public_cited` | ✅（引用其資料但自己寫句子） | **預設 ❌**——只有登記簿的 `可引用範圍` 是 `verbatim_ok:<範圍>`、且這一則的逐字內容確實落在該範圍內時才給 | **三欄都要有值**：`attribution`（要一起輸出到交付物裡）、`授權條款`、`可引用範圍`。缺任一欄，或 `可引用範圍` 是 `rewrite_only` 而這一則含逐字 → `blocked_needs_permission` |
-| `licensed_logo` | 不適用（視覺資產，走下方「視覺資產」規則） | 不適用 | 依 Logo 條款的版位與尺寸限制 |
+| `brand_owned` | Yes | **Yes** — brand's own copy needs no one else's authorization to quote verbatim | None |
+| `research_only` | Yes (**must be substantively rewritten**, not near-verbatim, not attributed) | No → `blocked_needs_permission` | Rewrite enough that it can't be searched back to the original post |
+| `authorized_verbatim` | Yes | Yes | Registry row's authorization field is non-blank |
+| `public_cited` | **Yes, conditionally**: only when `citable scope` is `rewrite_only` or `verbatim_ok:<scope>` — those values themselves mean "terms confirm commercial ad use." Blank or illegal scope → **not even rewrite is allowed**, straight to `blocked_needs_permission` | **Default No** — only when scope is `verbatim_ok:<scope>` and this asset's verbatim content falls inside that scope | All three fields present: `attribution` (ships with the deliverable), license terms, citable scope (one of the two legal values) |
 
-**`publishable_verbatim` 不是只有 `authorized_verbatim` 才給得起**——但也不是「公開＋有署名」就給得起。它的真正判準是「**這一則裡每一段逐字文字，各自的來源都有可稽核的紀錄證明允許逐字**」：
+Third-party visuals never enter this matrix — no path to either publish status, always `blocked_needs_permission` (see Third-party visuals).
 
-- `brand_owned` → 品牌自有文案逐字放上去不需要別人授權，直接可以
-- `authorized_verbatim` → 登記簿的「授權證明」欄指得出授權書或授權紀錄編號
-- `public_cited` → **「公開且署名」不等於允許逐字拿去做付費廣告**。多數官方統計、研究報告、媒體報導的條款允許「引用資料、註明出處」，但對**商業廣告的逐字重製**另有限制（甚至明文禁止把出處寫成像是對方背書）。所以這一類要看登記簿的 `可引用範圍`：只有 `verbatim_ok:<範圍>`、且這一則的逐字字數／段落數落在範圍內、用途沒被條款排除（常見排除項：商業用途、廣告、暗示背書）才允許逐字；其餘一律只能改寫。**判斷不了就是 `rewrite_only`**——改寫的成本遠低於用錯授權的成本
-- `research_only`（公開評論、留言、競品廣告）→ 明確不行
+**`publishable_verbatim` isn't reserved for `authorized_verbatim` alone — but it isn't "public + attributed" either.** The real test: *every verbatim span in this asset has an auditable record permitting verbatim use, source by source*:
+- `brand_owned` → no one else's permission needed.
+- `authorized_verbatim` → the registry's authorization field names the record.
+- `public_cited` → "public and attributed" ≠ "cleared for verbatim reuse in paid advertising"; most official stats/research/media terms permit citation-with-attribution but restrict or ban verbatim reproduction in commercial ads (some explicitly ban wording that reads as endorsement). Only `verbatim_ok:<scope>`, with this asset's verbatim length/scope inside that range and use not excluded by the terms, permits verbatim — everything else is rewrite-only. **When the scope can't be judged, don't default to `publishable_rewrite` either** — an unclear license should have been left blank at registration, triggering `blocked_needs_permission` then, not patched here with an optimistic guess.
+- `research_only` → verbatim never permitted.
+- Third-party visuals → not applicable, always `blocked_needs_permission`.
 
-**這一段沒有「模型自己讀了條款覺得可以」這個選項**：條款判讀的結果必須在登記時就寫進 `可引用範圍` 並附 `授權條款` 的出處，登記是使用者確認過的動作。產出流程只讀這一欄，不現場解釋條款。
+**No "the model read the terms and judged it fine" option**: license interpretation happens at registration, written into `citable scope` with `license terms` cited, confirmed by the user. Production reads that field only, never interprets terms live.
 
-**`attribution` 是唯一會隨交付物輸出的來源描述欄**：`public_cited` 的來源需要標出處，而 opaque `source_id` 標不出出處。所以這類來源在登記簿裡另存一欄可對外顯示的 `attribution` 字串（例如「資料來源：經濟部統計處 2026 年 3 月批發零售業營業額統計」），輸出時**跟著那一則資產一起交付**。它是公開資訊、不含個資，與「不輸出原文與網址」那條規則不衝突——不衝突的原因是它描述的是**公開出版品**，不是某個人的貼文。私人評論、留言不適用 `public_cited`，也就永遠不會走到這一欄。
+**`attribution` is the one source-description field that ships**: `public_cited` sources need attribution shown, and the opaque `source_id` can't show it — so the registry stores a separate, publicly displayable `attribution` string, which travels with the asset at delivery. It's public information without PII, so it doesn't conflict with "never ship raw text or URLs" — because it describes a **public publication**, not an individual's post; private reviews and comments never use `public_cited`, so they never reach this field.
 
-**多筆來源時取最嚴格的結果**：一則資產引用了 `brand_owned` 與 `research_only` 兩筆，只要有任何一段文字逐字取自 `research_only` 那筆 → 整則 `blocked_needs_permission`。
+**Multiple sources take the strictest result**: an asset citing both `brand_owned` and `research_only` — if any verbatim span comes from the `research_only` source, the whole asset is `blocked_needs_permission`.
 
-### 視覺資產也要有自己的 provenance
+## Visual assets need their own provenance too
 
-**Logo、見證照片、產品圖、去背素材、字型、背景音樂都是資產，不是「視覺描述」的附屬品。** 舊版只把 provenance 綁在文字資產上，結果一張需要授權的媒體 Logo、一張需要肖像同意的顧客照片，在整份交付物裡**沒有任何可稽核的紀錄位置**——設計師拿到概念檔照做，沒有人知道那個 Logo 到底能不能用。
+**Logos, testimonial photos, product shots, cutouts, fonts, background music are assets, not annotations on a "visual description."** A required-authorization media logo or a customer photo needing portrait consent has to have an auditable record somewhere in the deliverable — otherwise a designer works from the concept file with no way to know whether that logo is actually clear to use.
 
-**每一個要被放進成品的視覺元素，都要有自己的一筆紀錄**，欄位跟文字資產同一套，只是鍵名改成 `asset_id`：
-
-```
-視覺  asset_id: logo-20260729-001/F/licensed_logo    publish: publishable_verbatim
-      asset_id: visual-20260712-003/A/brand_owned    publish: publishable_rewrite
-```
-
-- `asset_id` 一樣要在 `inputs/SOURCES.md` **登記得到**，走上面同一套四項解析檢查
-- **常見對應**：媒體 Logo → `logo-*`／`F`／`licensed_logo`（登記簿要有 Logo 使用條款的檔案路徑）；顧客見證照片 → `testimonial-*`／`D`／`authorized_verbatim`（授權要涵蓋**肖像**，不只文字）；品牌自有產品圖／情境照 → `visual-*`／`A`／`brand_owned`；第三方素材庫圖 → `visual-*`／`A`／`public_cited`，`attribution` 依素材庫條款填（多數要求標示攝影者或平台）
-- **AI 生成的圖不算「沒有來源」**：登記成 `visual-*`／`A`／`brand_owned`，登記簿的「檔案路徑」指向產出的圖檔，並在來源類型註明是生成的。但**生成圖裡若出現看起來像真人的臉、像真實品牌的商標、像真實媒體的版面，一律當成需要授權處理**（`blocked_needs_permission`），不能靠「這是 AI 畫的」規避
-- **只描述版面配置、色塊、留白、字級這類純設計指示，不需要 `asset_id`**——那不是資產，是指示。分界線是「這個東西有沒有可能有人擁有它的權利」
-- 缺 `asset_id`／欄位不符／`publish` 是 `blocked_*` → **那個視覺元素不輸出**，該版型若因此缺了必要元素就整則跳過（例如媒體報導版型少了 Logo）
-
-**寫法（Markdown、CSV、簡報清單通用）**：來源層用 `id/class/license` 三元組，多筆用分號分隔；成品層另外一欄。
+**Every visual element that ships gets its own record**, same fields as text assets, keyed `asset_id`:
 
 ```
-src: productfact-20260729-001/A/brand_owned; casestudy-20260701-002/E/public_cited
-publish: publishable_rewrite
+Visual  asset_id: visual-20260712-003/A/brand_owned                 publish_status: publishable_rewrite
+        asset_id: testimonial-20260710-002/D/authorized_verbatim    publish_status: publishable_verbatim
+                  (portrait consent + copyright-transfer proof both on file, see Testimonial photos below)
 ```
 
-**`evidence_class` 決定這一則可以寫什麼，這是本 schema 的重點**：
+**Each `asset_id` gets its own `publish_status`, never shared** — a concept using multiple visual elements records each independently; one shared status can't show which specific element got blocked.
 
-| 這一則要講的內容 | 需要的 `evidence_class` | 只有其他類時怎麼辦 |
+- `asset_id` must resolve in `inputs/SOURCES.md` and pass the applicable output-time checks — same as text assets, minus check 6 (no textual claim to verify): resolves, unique, fields match, required proof in place, **source file untouched** (re-read, recompute the full SHA-256, lowercase-compare against the registered hash) — all five run, not just a format check; without #5, a swapped-out registered photo or graphic goes undetected.
+- **Common mapping**: brand-owned product/lifestyle shots → `visual-*`/`A`/`brand_owned`; testimonial photos → `testimonial-*`/`D`/`authorized_verbatim` (see Testimonial photos below); **third-party stock, third-party logos (media badges, certification marks, partner-brand marks), any non-brand-owned photo → always `blocked_needs_permission`** (see Third-party visuals).
+- **AI-generated images aren't "sourceless"**: register as `visual-*`/`A`/`brand_owned`, file path pointing at the generated file, note it's generated in the source type. But **a generated image resembling a real face, a real brand's mark, or real media layout is treated as needing authorization regardless** (`blocked_needs_permission`) — "it's AI-generated" doesn't bypass this.
+- Pure layout instructions — color blocks, whitespace, font size — don't need an `asset_id`; the line is "could someone own the rights to this."
+- Missing `asset_id`, mismatched fields, a failed hash re-check, or `blocked_*` status → that element doesn't ship; if the template needs it, skip the whole concept.
+
+### Third-party visuals are always blocked
+
+**Stock photography, third-party logos (media badges, certification marks, partner-brand marks), any non-brand-owned photo — blocked regardless of any accompanying license text.** `public_cited`'s "cite it, attribute it" is a text/data concept, wrong when applied to images — a stock photo labeled "source: XX stock library" doesn't carry commercial-ad reproduction rights; photographic copyright and "publicly findable, attributable" are unrelated. **Deliberately the most conservative call: this whole class is treated as unverifiable, blocked across the board** — stricter only, nothing that would otherwise be blocked gets waved through.
+
+**`brand_owned` applies only in two cases, and no ordinary third-party license (however complete) qualifies**: ① the asset is genuinely brand-original (shot, drawn, or commissioned by the brand, not licensed from someone else), or ② the asset's copyright itself has been **fully transferred** to the brand (not "usage rights granted" — actual change of copyright holder). A standard stock license or logo-usage permission, however clearly worded, only grants usage rights, never a copyright transfer — it doesn't qualify as `brand_owned`, stays `blocked_needs_permission` within this ticket's scope. Same distinction as the `source_license` table above: `brand_owned` describes "brand's own material," not "material the brand has rights to use" — the two are far apart.
+
+**Standard response for third-party visuals**: "Confirming rights to third-party visual assets (stock photos, logos, non-brand-owned photos) is outside this skill's scope — I won't clear this one. A standard stock license or logo-usage permission, however complete, doesn't make an asset `brand_owned` — that's a usage right, not a copyright transfer. Use a brand-original asset, or tell me if this asset's copyright has actually been fully transferred to you (not just licensed)."
+
+A more granular stock/logo licensing model is a separate scope, not something to bolt onto this file incrementally.
+
+### Testimonial photos: either condition missing blocks it
+
+Review-card and testimonial-stack templates using a subject's photo need the `authorized_verbatim` registry row's authorization field to establish **both**: ① portrait-use consent (the subject agrees to appear in paid ads) and ② the photo's own copyright belongs to the brand or has been fully transferred (not shot by an outside photographer who still holds it). **Either missing counts as blank, the whole photo is `blocked_needs_permission`** — consenting to appear doesn't grant rights to the photo itself; whoever took it (brand or outside photographer) holds that copyright, a separate question from the subject's consent.
+
+## `evidence_class` determines what an asset may say
+
+| Content | Needs `evidence_class` | With only other classes |
 |---|---|---|
-| 產品規格、成分、價格、服務內容、功能描述 | **A** | — |
-| 用顧客的說法描述痛點、情境、渴望（改寫，不逐字） | **A**（內容）＋**B**（語感） | 只有 A：照樣可以寫，語感退回通用寫法 |
-| **產品自身的規格數字**（「3 天到貨」「10 年保固」「全台 30 家門市」「設定只要 5 分鐘」） | **A**（產品文件／實測載明）或 **E**（第三方量測） | **不能寫**。改成不含數字的說法，或跳過該欄位 |
-| **關於效果、成果、對比基準的數字**（「省 10 小時」「快 3 倍」「95% 滿意」） | **E**（可佐證數字：案例研究、問卷、量測報告） | **不能寫**。`A` 撐不起這一類——產品規格說明不了使用者實際省了多少時間 |
-| **社會證明**（「很多人」「熱銷」「回購率高」「愛用」「破萬團隊」） | **E**（算得出來的彙總比例或計數） | **不能寫**。一則評論不能推出任何比例，見 `SKILL.md` 硬性規則 4 |
-| **具名或可辨識的見證逐字引用** | **D**＋來源的 `source_license: authorized_verbatim` | 跳過該版型 |
-| **競品比較、點名**（「比 X 快」「業界唯一」「市佔第一」） | **E**（對競品的可佐證查證資料） | **不能寫**。**`A` 不能用來支撐競品比較**——自家規格證明得了「我們 3 天到貨」，證明不了「比別人快」，那需要對方的資料 |
-| 媒體 Logo | **F**＋來源的 `source_license: licensed_logo` | 跳過該版型 |
+| Product spec, ingredients, price, service, features | **A** | — |
+| Customer-voice description of pain/context/desire (rewritten, not verbatim) | **A** (content) + **B** (register) | A only: still writable, register falls back to generic |
+| **The product's own spec numbers** ("3-day delivery," "10-year warranty," "30 stores nationwide," "5-minute setup") | **A** (product doc, tested — or the conversation-fact path's `usersaid-*`, which goes on the pre-launch verification list) or **E** (third-party measurement) | **Not writable**, rewrite without the number or drop the field |
+| **Numbers about outcomes, results, or a comparison baseline** ("saved 10 hours," "3x faster," "95% satisfied") | **E** (case study, survey, measurement report) | **Not writable** — `A` can't support this, product spec can't establish what a user actually saved |
+| **Social proof** ("many people," "best-selling," "high repeat rate," "loved by," "10,000+ teams") | **E** (a genuinely computed aggregate ratio or count) | **Not writable** — a single review supports no ratio, see `SKILL.md`'s hard rule on this |
+| **Named or identifiable verbatim testimonial** | **D** + `source_license: authorized_verbatim` | Skip the template |
+| **Competitive comparison / naming** ("faster than X," "only one in the category," "#1 by share") | **E** (substantiable data about the competitor) | **Not writable** — `A` can't support a comparison; your own spec proves your own claim, not the competitor's |
+| Media logo | Third-party visual, always `blocked_needs_permission` — doesn't enter `evidence_class` at all | Skip the template |
 
-**「有數字就 A 或 E」是錯的講法，要看宣稱指向誰**：指向自家產品的規格 → `A` 或 `E` 都行；指向使用者得到的成果、指向競品、指向市場地位 → **只有 `E`**。
+**"Has a number → A or E" is the wrong shortcut — it depends on who the claim is about**: pointing at your own product's spec → `A` or `E` either works; pointing at what the user got, a competitor, or market position → **`E` only**.
 
-**A-only 降級批次因此是成立的，不跟版型規則衝突**：只有 A 類證據時，`source_id` 寫產品事實的來源（`productfact-YYYYMMDD-NNN`），`evidence_class: A`、`source_license: brand_owned`、`publish: publishable_rewrite`——這是合格的 provenance，不是「沒有來源」。它限制的是**這一則能講什麼**（不能有成果數字、社會證明、見證、競品比較），不是「不能產出」。`static-ad-templates.md`「使用方式」第 3 點講的「追溯到真實評論、贏家廣告或留言」是 B／C 類有料時的做法，**A-only 時追溯到產品事實同樣算數**。
+**A-only degraded batches are legitimate, not a rules conflict**: with only class-A evidence, `source_id` cites the product-fact source (registry path: `productfact-YYYYMMDD-NNN`; conversation-fact path: `usersaid-YYYYMMDD-NNN`), `evidence_class: A`, `source_license: brand_owned`, `publish_status: publishable_rewrite` — that's valid provenance, not "no source." It limits *what this asset can say* (no outcome numbers, social proof, testimonial, or competitive comparison), not whether it can be produced at all.
 
-**多來源的規則**：
-
-- **不要把來源與類別各自壓成一串清單**——`s1;s2` 配 `A;E` 這種寫法沒有配對關係，看不出是哪個來源撐 E 類那個數字，也就無法執行下一條的逐宣稱稽核。要寫成 `s1/A/brand_owned; s2/E/public_cited` 這種**三元組**
-- **一則資產含多個宣稱時，每個宣稱各自對應到哪一筆來源、以及在那筆來源的哪個位置，都要標得出來**。宣稱超過一個就在紀錄裡加 `claim` 標記，格式是 `claimN=「宣稱」← <source_id>/<class> @<locator>`：
+**Multi-source rules**:
+- **Don't collapse sources and classes into two parallel lists** — `s1;s2` against `A;E` loses the pairing, you can't tell which source backs the `E`-class number, which breaks the per-claim audit below. Write triples: `s1/A/brand_owned; s2/E/public_cited`.
+- **When an asset carries more than one claim, mark each claim's source and locator individually** via `claimN="claim text" ← <source_id>/<class> @<locator>`:
   ```
-  claim1=「3 天到貨」← productfact-20260729-001/A @§2 出貨時效
-  claim2=「平均省 10 小時」← casestudy-20260701-002/E @p.4 para.2
+  claim1="3-day delivery" ← productfact-20260729-001/A @§2 shipping timeline
+  claim2="saves 10 hours on average" ← casestudy-20260701-002/E @p.4 para.2
   ```
-  **只有一個宣稱時一樣要寫 `@locator`**——宣稱數量不影響核對義務
-- **`publish_status` 取最嚴格的結果**：任何一個宣稱撐不住 → `blocked_unsupported_claim`；任何一段逐字引用超出該來源的 `source_license` → `blocked_needs_permission`。**兩種 blocked 都不輸出那一則**
-- **檢查方式是逐句問「這句話裡的每一個宣稱，分別由哪一筆來源支撐、那筆來源是哪一類」**，答不出來的那個宣稱就要拿掉
+  **Even a single claim needs its `@locator`** — the check applies regardless of claim count.
+- **`publish_status` takes the strictest result**: any unsupported claim → `blocked_unsupported_claim`; any verbatim span exceeding its source's license → `blocked_needs_permission`. **Either `blocked_*` means don't ship that asset.**
+- **The check is per sentence**: "which source backs each claim in this line, and what class is it" — a claim nobody can answer for gets dropped.
 
-- **為什麼缺欄位要 fail closed，不是「先交出去再補」**：來源層帶著 `source_license` 是因為「只能參考語感」與「已授權逐字」這條界線一旦在交接時遺失，下游的人（設計師、客戶端行銷、外部審稿）看到的就只是一段文案，他無從判斷這句話能不能逐字放進廣告；成品層的 `publish_status` 則是讓他不必自己重跑一次判斷。實務上遺失通常發生在「Markdown 概念檔有標，但轉成 CSV 交出去時欄位沒帶」這個節點——所以**每一種輸出格式都要帶完整四個欄位**（視覺資產為 `asset_id` 版本的四欄；`public_cited` 另加 `attribution`；每個宣稱另加 `@locator`），不是只有主要那一種有
+**Why fail-closed on a missing field, not "ship now, backfill later"**: `source_license` exists because the line between "reference only" and "cleared to quote verbatim" is the thing a downstream reader (designer, client marketer, external reviewer) can't judge for themselves once it's lost — `publish_status` saves them from re-deriving that judgment. The loss point is usually "the Markdown concept file had it, the CSV export didn't" — so **every output format carries all four fields** (visual assets use the `asset_id` version; `public_cited` adds `attribution`; every claim adds `@locator`), not just the primary one.
 
-- **存取控制**：`inputs/` 資料夾內含未去識別化的原始顧客資料時，存放位置要限制存取權限，不要放在任何公開或共用的版本庫（不要 `git commit` 進公開或半公開的 repo）；本技能包本身不代管任何顧客資料，這是使用者部署此技能時要自行確保的環境設定
-- 輸入過期後比照上述規則，刪除或去識別化過期內容，不要無限期保留
+**Access control**: when `inputs/` holds non-de-identified raw customer data, restrict access to that location and never commit it to a public or shared repo — this package doesn't host any customer data itself, securing it is the deploying user's own environment responsibility.
+
+**Retention**: delete or de-identify expired inputs on the same schedule noted above (winning ads refreshed as new ones scale, reviews/comments monthly) — don't retain indefinitely.

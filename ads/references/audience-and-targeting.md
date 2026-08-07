@@ -1,109 +1,112 @@
-# 受眾理解與投放設定
+# Audience understanding and targeting setup
 
-## 受眾知識該用在哪：先用在素材，再用在投放篩選
+## Where audience knowledge belongs: creative first, targeting filters second
 
-深入理解受眾——人口特徵、職稱、痛點、恐懼、期待、他們用什麼字描述自己的問題——依然是付費廣告最高槓桿的工作。**這裡指的是族群輪廓層次的理解**（例如「30-45 歲、常抱怨報表製作耗時的中小企業主」），**不是任何具體個人的識別資料**（原始個資一律拒收，見 [compliance-taiwan.md](compliance-taiwan.md)）。
+Deep audience understanding — demographics, job titles, pain points, fears, expectations, the words they use to describe their problem — is still the highest-leverage work in paid advertising. **This means cohort-level understanding** (e.g. "SMB owners, 30-45, who complain reporting takes too long"), **never any specific individual's identifying data** (raw PII is always refused — see the loaded GEO module).
 
-2026 年變的是「把這些資訊用在哪裡」。廣告平台演算法在找到對的人這件事上已經強得多，把所有受眾知識塞進平台的「投放篩選條件」，效果不如把同樣的資訊餵進「素材」（標題、文案、視覺、開頭鉤子、案例）。
+What changed is where that understanding gets used. Ad-platform algorithms have gotten much better at finding the right person on their own; stacking all that audience knowledge into the platform's targeting filters now underperforms feeding the same knowledge into the **creative** (headline, copy, visuals, hook, case study).
 
-| 平台 | 用在素材 | 用在投放篩選 | 備註 |
-|------|----------|--------------|------|
-| **Meta**（Andromeda 演算法後） | **80%+** | 20% | 演算法獎勵廣泛受眾＋精準素材，堆疊興趣標籤反而扣分 |
-| **Google 搜尋** | 40% | **60%** | 關鍵字仍是主導訊號——比對類型、搜尋意圖分層、否定關鍵字依然決定成效 |
-| **Google Performance Max** | **70%** | 30% | 受眾訊號是建議性質，素材＋商品資料品質才是主力 |
-| **LINE 廣告平台** | 50% | **50%** | LINE 的興趣／人口標籤來自站內行為，精準度不錯，但素材是否符合台灣使用者的閱讀習慣（貼圖化語氣、口語化用字）同樣關鍵 |
-| **TikTok** | **70%** | 30% | 演算法邏輯接近 Meta，廣泛受眾＋原生感素材勝出 |
+| Platform | Weight in creative | Weight in targeting | Note |
+|---|---|---|---|
+| **Meta** (post-Andromeda) | **80%+** | 20% | The algorithm rewards broad targeting + precise creative; stacking interest tags now costs performance |
+| **Google Search** | 40% | **60%** | Keywords still lead — match type, search-intent tiering, and negative keywords still decide outcomes |
+| **Google Performance Max** | **70%** | 30% | Audience signals are suggestions; creative and product-feed quality carry the campaign |
+| **LINE Ads Platform** | 50% | **50%** | LINE's interest/demographic tags come from in-app behavior and are reasonably precise, but creative fit to local reading habits (tone, informal register) matters just as much |
+| **TikTok** | **70%** | 30% | Similar algorithm logic to Meta — broad targeting + native-feeling creative wins |
 
-這些比例是方向性參考，實際仍要在自己的帳戶測試，不同帳戶、不同產業可能有明顯落差。
+These ratios are directional, not a rule — test on the actual account; results vary by industry.
 
-**常見失敗模式**：用超精準的投放篩選去彌補薄弱素材。素材普通卻疊了 12 個興趣標籤＋3 個人口篩選＋自訂受眾，結果是把小眾人群鎖起來看爛廣告。更好的做法：用同樣的族群輪廓理解，寫出 5 個對應不同族群的素材版本（走 `ad-creative` 技能），投放給廣泛受眾，讓演算法自己去配對。
+**Common failure mode**: over-targeting to compensate for weak creative. Mediocre creative stacked with 12 interest tags, 3 demographic filters, and a custom audience locks the ad in front of a small crowd watching a mediocre ad. Better: write 5 creative variants targeted at different cohorts (route to `ad-creative`), serve them broadly, and let the algorithm sort out the matching.
 
-## Meta 現代投放心法（Andromeda 時代）
+## Meta's current playbook (the Andromeda era)
 
-Meta 在 2025 年推出 Andromeda 演算法，改變了投放邏輯。舊玩法（堆疊興趣標籤、精緻影片素材、單一贏家放大）效果變差：
+Meta shipped the Andromeda ranking algorithm in 2025, changing the targeting playbook. Old tactics (stacking interest tags, polished video creative, scaling a single winner) underperform now:
 
-- **素材量是瓶頸，靜態圖常常贏過精緻影片**——Andromeda 需要源源不絕的新鮮素材才不會疲乏；靜態圖成本遠低於影片，能快速衝出需要的量。**每週固定 1 小時**產出新素材給表現最好的優惠，量比精緻度重要
-- **素材就是投放**——只設定地區（台灣、或特定縣市），讓素材自己做投放
-- **身分觸發關鍵字**——拿贏家廣告複製一份，在標題或內文塞入身分／利基關鍵字：「一週幫你多拿 462 個名單」→「一週幫你多拿 462 個**牙醫診所**名單」／「...**房仲**名單」。這個關鍵字同時是給觀看者的身分觸發，也是給演算法的投放訊號
-- **別讓廣告長得像廣告**——大量使用者裝了廣告攔截，精緻感的廣告美學反而扣分。研究 Threads／Instagram／Dcard 上「原生內容」長什麼樣，讓廣告去貼近那個美學；建立一個乾淨的觀察帳號，追蹤目標受眾常看的意見領袖與粉專
-- **長文案在近期表現常優於短文案**——給演算法更多脈絡去判斷該推給誰；實際效果依產業與受眾而異，建議在自己帳戶做 A/B 對照，不要當成通用結論
+- **Creative volume is the bottleneck, static images often beat polished video** — Andromeda needs a steady stream of fresh creative to avoid fatigue; static creative costs far less to produce at volume. Spend a fixed hour a week producing new variants for the best-performing offer — volume beats polish
+- **Creative is the targeting** — set only geography (country, or specific region) and let the creative do the targeting
+- **Identity-trigger keywords** — take a winning ad and insert an identity/niche keyword into the headline or body: "get 462 more leads a week" → "get 462 more **dental clinic** leads a week" / "...**real-estate agent**..." — the keyword is both an identity trigger for the viewer and a targeting signal for the algorithm
+- **Don't let the ad look like an ad** — ad-blocker adoption is widespread, and a polished ad-agency look now costs performance. Study what "native content" looks like on the platforms your audience actually uses, and match that aesthetic; keep a clean observation account tracking the creators your audience follows
+- **Long-form copy has recently outperformed short copy** — gives the algorithm more context to route on; effect varies by industry and audience, A/B test on the account rather than treating this as a universal conclusion
 
-## 「廣泛」指的是拿掉興趣／人口篩選，不是拿掉排除名單
+## "Broad" means dropping interest/demographic filters, not exclusion lists
 
-放寬興趣定向前，先確認下列**受眾排除條件**已經設定。
+Before loosening interest targeting, confirm the exclusion list below is already in place.
 
-### 受眾排除條件（這份清單只放「真的要把某群人排除在受眾之外」的動作）
+### Exclusion list (this list only holds "actively excluded from the audience" actions)
 
-- **既有客戶排除**（suppression）：已經是客戶的人不該被當成新客受眾繼續花錢觸及（除非是刻意做的既有客戶活動）
-- **近期轉換者排除**（suppression）：近期才轉換過的人（例如過去 7-14 天內），避免重複轉換膨脹成效數字
-- **拒絕行銷名單剔除**（suppression）：已表示拒絕行銷、或基於自家政策不該再被觸及的名單。**這一項有法定基礎**——個資法第 20 條第 2、3 項要求首次行銷提供免付費拒絕方式、拒絕後立即停止利用。**但它的落實方式是「在本地產生上傳檔之前就剔除」，不是「把拒絕名單上傳成一個排除受眾」**——後者等於為了不打擾這個人而把他的識別碼傳給平台，方向是反的。已經在平台既有受眾裡的，用平台的移除操作移除，不要新建排除受眾。完整說明見 [compliance-taiwan.md](compliance-taiwan.md)「拒絕行銷名單：在本地剔除，不要上傳」
-- **法定年齡排除**：產品或優惠有法定最低年齡限制時（菸酒、博弈類），投放設定要把該年齡層以下的受眾排除掉。**這是唯一一項「因為法規而真的要排除某群人」的條件**，跟下一段的 Special Ad Category 完全是兩回事
-- **無效短訪客排除**（再行銷受眾才適用）：造訪頁面但停留時間極短（例如 <10 秒，通常是誤點或跳出）的訪客不該被納入再行銷受眾
+- **Existing-customer exclusion** (suppression): existing customers shouldn't keep being paid for as if they were new-customer prospects (unless the campaign is deliberately targeting existing customers)
+- **Recent-converter exclusion** (suppression): people who converted in the last window (e.g. 7-14 days) shouldn't be double-counted by repeated exposure
+- **Opt-out list removal** (suppression): people who've opted out of marketing, or who shouldn't be reached under the business's own policy. **This one has a legal basis** — see the loaded GEO module for the specific law and, critically, the correct implementation: suppress locally before generating the upload file, never upload the opt-out list itself as an "excluded audience" (that hands their identifier to the platform, the opposite of the intent)
+- **Legal age exclusion**: when the product or offer has a legal minimum age (alcohol, gambling categories), exclude the underage segment from targeting. **This is the only exclusion driven purely by law** — entirely separate from Special Ad Category, below
+- **Short-visit exclusion** (remarketing audiences only): visitors with very short dwell time (e.g. <10s, usually a mis-click or bounce) shouldn't be pulled into a remarketing audience
 
-### 合規義務（不是排除條件——放進受眾排除清單裡會誤導操作）
+### Compliance obligations (not exclusions — putting these in the exclusion list misleads the setup)
 
-#### Meta 特殊廣告類別（Special Ad Category）＝申報義務＋平台反過來限制你的定向選項
+#### Meta Special Ad Category (SAC) = a disclosure obligation, and the platform then restricts your own targeting options
 
-**SAC 的類別清單會隨投放地區與時間改變，不要背成一份全球固定清單。** 長期以來的核心三類是**就業（Employment）、住房（Housing）、信用（Credit）**，另有需單獨申報的社會議題／選舉／政治類廣告；但 Meta 已在部分市場把 Credit 擴大或改制為涵蓋範圍更廣的**金融產品與服務（Financial Products and Services）**——依 Meta 公告，該類別自 2025 年 1 月 21 日起適用於美國廣告主、以及投放至美國／加拿大／部分歐洲地區的廣告主，把投資、保險等原本不在 Credit 裡的金融行銷一併納管（<https://www.facebook.com/business/help/1157846251802527>，查證日期：2026-07-25）。**所以「一般金融行銷、保險不算 SAC」這種一句話結論已經不成立**，它只在特定地區、特定時間點才對。
+**The SAC category list changes by market and over time — don't memorize it as a fixed global list.** The long-standing core three are **Employment, Housing, and Credit**; Meta has since expanded or restructured Credit in some markets into a broader **Financial Products and Services** category, effective 2025-01-21 for US advertisers and advertisers delivering to the US/Canada/parts of Europe, folding investment and insurance marketing that wasn't previously under Credit. **"General financial marketing and insurance don't count as SAC" is no longer a safe one-line conclusion** — it only holds for specific markets and time windows.
 
-**實際判斷方式（每次投放都要重跑，不要引用本檔或任何二手摘要當結論）**：
+last_verified: 2026-07-25
+Source: <https://www.facebook.com/business/help/1157846251802527> — re-check this page directly; a category boundary like this one moves independently of this file's own revision history.
 
-1. **廣告主／付款主體所在地**——上面引的 Meta 公告寫得很清楚：新的金融產品與服務類別「適用於**美國廣告主**、以及投放至美國／加拿大／部分歐洲的廣告主」。**前半句跟投遞地區無關**：一個美國註冊、用美國帳單資訊付款的廣告主，即使只投台灣，也可能被納管。要確認的是廣告帳號的**業務所在地、帳單國別與付款主體註冊地**（三者不一致時全部都要看，取最嚴的那個）
-2. **實際投遞地區**——SAC 規則也跟著投遞地區走，主市場是台灣但同時投美國／加拿大／部分歐洲，就會被納管
-3. **政策生效日**——類別改制有明確生效日期（例如金融類的 2025-01-21）。判斷「現在適不適用」要看的是**投放期間**落在生效日的哪一邊，不是憑印象說「之前不用申報」
-4. 打開該廣告帳號的 Ads Manager 建立活動流程，看**特殊廣告類別下拉選單當下實際列出哪些選項**
-5. 對照 Meta 官方說明頁與商業幫助中心的當期政策
+**Actual determination (rerun every time you launch — never cite this file or any secondhand summary as the answer):**
 
-**上面五項全部要跑，不是符合其中一項才查。** 只看第 2 項（投遞地區）是最常見的漏判——這正是「主市場台灣所以不用管」這個錯誤結論的來源。
+1. **Advertiser/payment-entity location** — the Meta announcement is explicit: the new financial category applies to **US advertisers**, and to advertisers delivering to the US/Canada/parts of Europe. **The first half is independent of delivery region**: a US-registered advertiser billing through a US payment method may be in scope even if delivery is Taiwan-only. Check the ad account's business location, billing country, and payment-entity registration (if these disagree, use the strictest)
+2. **Actual delivery regions** — SAC also follows delivery region; a primarily-Taiwan campaign that also delivers to the US/Canada/parts of Europe falls into scope
+3. **Policy effective date** — a category change has a specific effective date (e.g. 2025-01-21 for financial). "Does this apply now" depends on which side of that date the delivery window falls, not memory of "it wasn't required before"
+4. Open the ad account's campaign-creation flow and check **which options the Special Ad Category dropdown actually lists right now**
+5. Cross-check against Meta's current official policy and Business Help Center pages
 
-**不一致時怎麼處理（後台選單不是裁決者）**：
+**All five checks run every time, not just whichever one seems to apply.** Check 2 (delivery region) alone is the most common miss — it's the source of the "primary market is Taiwan so this doesn't apply" error.
 
-- **官方政策說適用、但後台選單沒有對應選項** → **停止發布，升級 Meta 支援釐清**（廣告帳號可能還沒被切換到新版介面、或選項在別的層級）。**不要因為「後台沒擋」就當成不適用照樣上線**——後台缺選項是介面狀態，不是政策豁免；事後被判定違規的責任在廣告主，而且申報遺漏可能導致廣告下架或帳號受限
-- **後台有選項、官方頁面查不到對應說明** → 依後台申報（保守側），並記錄下來
-- **兩者都指向適用** → 申報
+**When the checks disagree (the dropdown isn't the final word):**
 
-**五項的查核結果都要逐欄記進交件文件**，各自附查證日期與依據（看了哪個頁面、後台哪個畫面）：①廣告主／付款主體所在地 ②實際投遞地區 ③政策生效日與投放期間的關係 ④後台下拉選單當下的選項 ⑤官方政策頁的當期說明。缺任一欄就不算查核完成，不得發布。
+- **Official policy says it applies, but the dropdown has no matching option** → **stop and escalate to Meta support before publishing.** Don't treat a missing option as non-applicability — the account may not be on the updated interface yet, or the option lives at a different level. A missing option is an interface state, not a policy exemption; the advertiser bears the responsibility if this is later judged non-compliant, and a missed disclosure can get the ad taken down or the account restricted
+- **The dropdown has the option, official pages don't document it** → follow the dropdown (the conservative side), and log it
+- **Both point to applicable** → disclose
 
-**申報後會發生什麼（這部分不隨類別改版而變）**：**Meta 會把你原本能用的定向選項拿掉**（年齡、性別、郵遞區號精準定向、特定興趣類別的細節定向、類似受眾與部分自動擴展等），受眾範圍反而**變寬**——所以「申報 SAC」跟「排除某群受眾」不只是不同的兩件事，**方向根本相反**。**絕對不要為了「處理特殊類別」而去建立一個排除受眾**：一來平台不是這樣運作的，二來 SAC 的立法意圖正是防止對受保護族群做差別待遇，自己動手排除特定族群反而可能違反平台政策。
+**Log the outcome of all five checks in the delivery document**, each with its verification date and basis (which page, which screen): ① advertiser/payment-entity location ② actual delivery regions ③ effective date vs. delivery window ④ what the dropdown currently lists ⑤ what the current official policy page says. Missing any one means the check isn't complete — don't publish.
 
-另外醫療機構廣告、保健食品廣告一般不是靠 SAC 管，而是走各自的內容政策（健康聲明、個人屬性等）——這是不同的規則體系，不要塞進 SAC 判斷裡。
+**What happens after disclosure (this part doesn't change with the category revision)**: **Meta removes targeting options you'd otherwise have** (age, gender, precise ZIP targeting, detailed-interest targeting in that category, lookalikes, some automatic expansion) — the audience gets **broader**, so "disclose SAC" and "exclude some audience" aren't just different, they're **opposite directions**. **Never build an exclusion audience to "handle" a special category**: the mechanism doesn't work that way, and SAC exists specifically to prevent differential treatment of protected groups — self-excluding a group risks violating platform policy on its own.
 
-#### 禁止文案暗示受眾的個人狀態（文案內容規則，任何產業都適用）
+Medical-facility and supplement advertising is generally governed by content policy (health claims, personal-attribute rules), not SAC — a separate rule set; don't fold it into an SAC determination.
 
-不論有沒有申報特殊廣告類別，Meta 的個人屬性政策都禁止廣告文案直接對觀看者做出健康狀況、財務狀況、性傾向等個人狀態的暗示或斷言（例如「你是不是也有負債問題？」「妳是不是也有這個病？」這種第二人稱直接斷言受眾狀態的寫法），文案要用一般性陳述取代對觀看者個人狀態的直接指涉。**這一條管的是文案怎麼寫，跟受眾怎麼設定無關。**
+#### No copy implying the viewer's personal status (a copy rule, applies to any industry)
 
-## 再行銷策略
+Regardless of SAC disclosure status, Meta's personal-attributes policy prohibits copy that directly asserts or implies a viewer's health, financial, or sexual-orientation status (e.g. second-person copy like "struggling with debt?" or "have this condition too?"). Use general statements instead of direct assertions about the viewer's personal state. **This governs how copy is written, unrelated to how targeting is set.**
 
-### 依漏斗階段
+## Remarketing strategy
 
-| 漏斗階段 | 受眾 | 訊息 | 目標 |
-|----------|------|------|------|
-| 上層 | 部落格讀者、影片觀眾 | 教育內容、社會證明 | 推進到考慮階段 |
-| 中層 | 瀏覽過報價／產品頁的人 | 案例分享、預約諮詢 | 推進到決策階段 |
-| 下層 | 加入購物車未結帳、試用中的使用者 | 急迫感、處理疑慮 | 促成轉換 |
+### By funnel stage
 
-### 再行銷時間窗
+| Funnel stage | Audience | Message | Goal |
+|---|---|---|---|
+| Top | Blog readers, video viewers | Educational content, social proof | Move to consideration |
+| Middle | Visited pricing/product pages | Case studies, book a consult | Move to decision |
+| Bottom | Cart abandoners, active trial users | Urgency, objection handling | Convert |
 
-| 階段 | 時間窗 | 頻率上限 |
-|------|--------|----------|
-| 熱（購物車／試用） | 1-7 天 | 可以較高 |
-| 溫（瀏覽重要頁面） | 7-30 天 | 每週 3-5 次 |
-| 冷（任何造訪） | 30-90 天 | 每週 1-2 次 |
+### Remarketing time windows
 
-建立任何再行銷受眾前，先套用上方的**受眾排除條件**——再行銷受眾特別容易誤觸「近期已轉換卻還在燒錢觸及」跟「無效短訪客灌水受眾規模」這兩個問題，**時間窗設定不能取代這些排除條件**。**Special Ad Category 不在這份清單裡**：它是申報義務與平台端的定向限制，不是要你排除某群受眾。
+| Stage | Window | Frequency cap |
+|---|---|---|
+| Hot (cart/trial) | 1-7 days | Can run higher |
+| Warm (viewed key pages) | 7-30 days | 3-5x/week |
+| Cold (any visit) | 30-90 days | 1-2x/week |
 
-疲乏偵測的頻率門檻（安全／警告／危險區間）屬於成效判斷，在 `campaign-analysis-iteration` 技能。
+Apply the exclusion list above before building any remarketing audience — remarketing audiences are especially prone to two problems: burning spend on recent converters, and inflating audience size with short-visit noise. **Time-window settings don't substitute for those exclusions.** Special Ad Category isn't on this list — it's a disclosure obligation with platform-side targeting restrictions, not an audience to exclude.
 
-### 用「不同優惠」再行銷（不是同一個）
+Fatigue-detection frequency thresholds (safe/warning/danger zones) are a performance judgment, made in `campaign-analysis`.
 
-傳統再行銷是把同一個優惠再推一次給沒買的人。更有效的原則：**沒買最常見的原因是優惠對他們來說不對**。把同一件事推得更用力沒有幫助。改用目錄裡**不同**的商品／服務／優惠：
+### Remarket with a different offer, not the same one
 
-- 瀏覽過保健品卻沒買 → 用完全不同品類再行銷（例如美妝）
-- 下載過名單磁鐵卻沒預約 → 用另一個相關主題的名單磁鐵
-- 看過報價頁沒填單 → 改推免費健檢／免費諮詢
+Traditional remarketing re-serves the same offer to non-converters. More effective: **the most common reason someone didn't buy is that the offer wasn't right for them.** Pushing the same thing harder doesn't fix that. Use a **different** product/service/offer from the catalog instead:
 
-這個做法的成效提升在實務案例中常常很明顯，但幅度因產業、受眾與優惠差異極大——**不要對客戶承諾特定倍數的 ROAS 提升**，用「值得測試」而非「保證有效」的語氣。
+- Browsed supplements, didn't buy → remarket a different category (e.g. beauty)
+- Downloaded a lead magnet, didn't book → offer a different, related lead magnet
+- Viewed pricing, didn't fill the form → offer a free assessment or consultation instead
 
-### 回訪未成交名單
+This often lifts results meaningfully in practice, but the size of the lift varies too much by industry, audience, and offer to promise — **never commit to a specific ROAS multiple**, use "worth testing," not "guaranteed."
 
-對下載過名單磁鐵或進了漏斗卻沒買的名單，安排電話或訊息回訪，問「當初卡在哪裡」。這些第一手回饋是處理疑慮類再行銷素材最好的原始素材——把它餵進 `ad-creative` 技能的輸入素材庫（注意：訪談內容屬於非公開的一對一溝通，納入素材庫前要確認授權，見該技能的「資料處理原則」）。
+### Follow up with people who didn't convert
+
+For people who downloaded a lead magnet or entered the funnel without buying, schedule a call or message asking what held them back. This first-hand feedback is some of the best raw material for objection-handling creative — feed it into `ad-creative`'s input library (note: interview content is non-public one-to-one communication; confirm consent before adding it to the library — see that skill's data-handling section).

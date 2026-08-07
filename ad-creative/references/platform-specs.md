@@ -1,55 +1,56 @@
-# 平台規格與中文字元計算
+# Platform specs and CJK character counting
 
-平台會拒絕或截斷超過限制的素材，交付前務必逐一檢查字數。
+Platforms reject or truncate assets past their limit — check character counts before delivery, every time.
 
-## 中文字元計數（雙倍寬度規則，台灣代操最常算錯的一項）
+## CJK character counting (wide-character rule)
 
-**Google Ads 官方對中文、日文、韓文這類全形（wide）字元採雙倍寬度計算——每個全形字算 2 個字元，不是 1 個。** 來源：Google Ads 官方說明「About responsive search ads」<https://support.google.com/google-ads/answer/7684791>（查證日期：2026-07-20）。等同於「30 字元的標題限制，中文實際大約只能放 15 個全形字」。
+**Google Ads officially counts CJK (Chinese/Japanese/Korean) wide characters as 2, not 1.**
 
-**不要**只用純 Unicode 字元數（JavaScript `[...str].length`、Python `len(str)`）去估中文文案——那樣會低估將近一半，可能讓表面上「在 30 字元內」的中文標題實際超限、平台後台直接拒絕或截斷。
+```
+last_verified: 2026-07-20
+Source: https://support.google.com/google-ads/answer/7684791 ("About responsive search ads")
+```
 
-可重現的計數演算法與 Python 實作見 `ads` 技能的 [`references/rsa-output-spec.md`](../../ads/references/rsa-output-spec.md)「中文字元計數」。摘要：用 Unicode 的 East Asian Width 屬性判斷，屬性為 `W`（Wide）或 `F`（Fullwidth）的字元算 2，其餘（`Na`、`H`、`A`、`N`，含所有半形英數字、半形符號、空格）算 1。中文字與全形標點（，。！？「」）都屬於 `W`。
+A 30-character headline limit holds roughly 15 wide (CJK) characters, not 30 — **don't** estimate with a plain Unicode code-point count (`[...str].length` in JS, `len(str)` in Python); that undercounts by nearly half and can pass a headline that the platform will actually reject or truncate.
 
-範例：「別再手動做報表」→ 7 個全形字 × 2 = **14**；「報表自動化，5分鐘搞定」→ 10 個全形字元（含全形逗號）× 2 ＋ 半形數字「5」× 1 = **21**。
+Reproducible algorithm and a Python implementation: `ads` skill's [`rsa-output-spec.md`](../../ads/references/rsa-output-spec.md), "Character counting" section. Summary: classify by Unicode East Asian Width — property `W` (Wide) or `F` (Fullwidth) counts as 2, everything else (`Na`, `H`, `A`, `N` — all halfwidth Latin letters/digits, halfwidth punctuation, spaces) counts as 1. CJK characters and fullwidth punctuation (，。！？「」) are `W`.
 
-**交付前務必用平台後台或 Google Ads Editor 的實際輸入框貼上驗證一次，不要只信賴人工計算或本檔的演算法**——平台規則可能更新，實測是唯一能保證跟當下平台判定一致的方法。
+Example: "別再手動做報表" → 7 wide characters × 2 = **14**. "報表自動化，5分鐘搞定" → 10 wide characters (including the fullwidth comma) × 2 + halfwidth digit "5" × 1 = **21**.
 
-## Google Ads（RSA 回應式搜尋廣告）
+**Always paste the final text into the platform's own input box (or Google Ads Editor) before delivery** — don't trust manual counting or this file's algorithm alone; a platform rule can change, and a live check is the only way to match current enforcement.
 
-| 元素 | 限制 | 數量 |
-|------|------|------|
-| 標題 | 30 字元 | 最多 15 個 |
-| 說明 | 90 字元 | 最多 4 個 |
-| 顯示網址路徑 | 每段 15 字元 | 2 段 |
+## Google Ads (Responsive Search Ads)
 
-上表的「最多 15／4」是 Google **平台允許的上限**（平台實際只要求最少 3 個標題、2 個說明就能建立 RSA）。本技能包另有「每組 RSA 交剛好 15／4」的 **house rule**，那是本包對輸出品質的要求，不是平台的技術限制——兩者的差別與完整輸出規格見 `ads` 技能的 [`references/rsa-output-spec.md`](../../ads/references/rsa-output-spec.md)。
+| Element | Limit | Count |
+|---|---|---|
+| Headline | 30 characters | Up to 15 |
+| Description | 90 characters | Up to 4 |
+| Display path | 15 characters each | 2 segments |
 
-## Meta 廣告（Facebook／Instagram）
+The "up to 15/4" above is Google's **platform ceiling** (the platform itself only requires a minimum of 3 headlines and 2 descriptions to create an RSA). This package additionally has its own house rule of delivering exactly 15/4 per RSA — that's a quality bar this package sets, not a platform requirement. Full output spec and the distinction: `ads` skill's [`rsa-output-spec.md`](../../ads/references/rsa-output-spec.md).
 
-| 元素 | 限制 | 備註 |
-|------|------|------|
-| 主要文案 | 可見 125 字元（最長 2,200） | 鉤子要放最前面 |
-| 標題 | 建議 40 字元 | 圖片下方 |
-| 說明 | 建議 30 字元 | 標題下方 |
-| 顯示網址 | 40 字元 | 選填 |
+## Meta ads (Facebook/Instagram)
 
-## LINE 廣告平台（LAP）
+| Element | Limit | Note |
+|---|---|---|
+| Primary text | 125 visible characters (2,200 max) | Front-load the hook |
+| Headline | ~40 characters recommended | Below the image |
+| Description | ~30 characters recommended | Below the headline |
+| Display link | 40 characters | Optional |
 
-| 元素 | 限制 | 備註 |
-|------|------|------|
-| 廣告標題 | 建議 20 字元內 | 中文較密集，過長易被截斷 |
-| 廣告內文 | 建議 50 字元內 | 依版位（Timeline、LINE TODAY、貼文串）略有差異 |
-| 圖片版位 | 依格式而定（正方形、長方形） | 投放前於後台預覽實際呈現 |
+## TikTok ads
 
-以上 LINE 建議值為經驗參考，正式規格請以 LINE Ads Platform 官方後台當下公告為準。
+| Element | Limit | Note |
+|---|---|---|
+| Ad copy | ~80 characters recommended (100 max) | Above the video |
+| Display name | 40 characters | Brand name |
 
-## TikTok 廣告
+## LINE Ads Platform (LAP)
 
-| 元素 | 限制 | 備註 |
-|------|------|------|
-| 廣告文案 | 建議 80 字元內（最長 100） | 影片上方 |
-| 顯示名稱 | 40 字元 | 品牌名 |
+TW-specific — see [`geo/tw.md`](geo/tw.md)'s "LINE Ads Platform" section, loaded when `profile.md`'s `geo` list includes `TW`.
 
-## 未涵蓋的平台
+## Platforms not covered
 
-原版技能另涵蓋 LinkedIn 與 X 的版位規格。本在地化版本**未提供**——台灣媒體採購的實務投放量集中在上述四個平台，LinkedIn 與 X 在台灣的付費投放佔比低，且它們的規格沒有任何台灣在地化的施力點（照抄等於翻譯）。需要這兩個平台時，請直接查各自的官方廣告規格頁面。這項缺漏一併記在 `NOTICE.md` 的涵蓋範圍表。
+LinkedIn and X ad specs aren't provided in this package. This package covers the performance-ad platforms most launches spend on; regional media concentration is a GEO-specific fact — see the applicable [`geo/<code>.md`](geo/tw.md) module for which platforms actually carry spend in that market. LinkedIn and X have no GEO-localization angle to add here regardless (copying their spec pages would just be translation, against this package's "not a plain translation" principle). Check each platform's own official ad-specs page when needed.
+
+**When `profile.md` lists a GEO with no matching module** in this file or [`geo/`](geo/): say so explicitly ("this pack has no platform-spec module for `<GEO>`") rather than guessing, and follow the freshness protocol in [`../../AUTHORING.md`](../../AUTHORING.md) to check the platform's current official spec before relying on a number.

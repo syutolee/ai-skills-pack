@@ -1,201 +1,176 @@
-# 素材策略迴圈
+# Creative strategy loop
 
-模式一（從零產出）與模式二（規模化靜圖批次）回答的是「幫我出廣告」。這份參考檔支撐**模式三：素材策略迴圈**，回答更前面的問題：**哪些廣告值得做、依什麼順序、用多少產能**——以及把每個月的成效回饋變成下個月計畫的複盤機制。這是一個持續運作的策略迴圈，由 agent 執行分析，人來下決策。在地化自原版 `creative-roadmap.md`（策略迴圈骨架）與 `hook-system.md`（鉤子系統，濃縮進本檔「鉤子系統」一節），來源見 `../NOTICE.md`。
+Mode 1 (from scratch) and Mode 2 (scaled static batch) answer "make me some ads." This file supports **Mode 3: the creative strategy loop**, the question in front of that: **what's worth making, in what order, at what capacity** — and the monthly feedback loop that turns last month's results into next month's plan. A continuously running strategy loop, executed by the agent, decided by a human.
 
 ```
-訊號 → 概念（附證據等級） → 產能表（分級、對照產能上限） → 素材簡報 → 交給模式一／二產出 → 每月複盤 → 回饋進概念庫
+Signals → evidence-graded concepts → capacity roadmap (tiered, checked against capacity) → creative brief → handed to Mode 1/2 → monthly retro → back into the concept bank
 ```
 
-**這份參考檔跟 [`grounded-inputs.md`](grounded-inputs.md) 的資料處理原則是同一套規則，不是獨立的一套**：本檔任何地方提到「顧客語言」「逐字」「來源」，都要套用該檔「資料處理原則」的規則——只用**已授權且來源公開／去識別化**的資料；私訊、客服對話這類非公開內容預設排除，不當成常態訊號來源；沒有可稽核授權時，只能輸出**經過改寫的洞察**，不逐字引用；概念簡報裡的「來源」欄位一律記錄成 [`grounded-inputs.md`](grounded-inputs.md)「provenance schema」定義的不透明三元組 `source_id/evidence_class/source_license`（例如 `review-20260715-014/B/research_only`，不是原文本身）。以下步驟提到「訊號」「逐字語言」時都在這個前提下運作，不是額外允許逐字引用私訊或未授權評論。
+**Comparative performance judgment (which creative wins, what phase the account is in, funnel diagnosis) is not this file's job.** That's `campaign-analysis-pro`'s comparative-verdict layer (paid; free-tier `campaign-analysis` covers only absolute stop-loss and problem-routing — see its own scope boundary). Every step below that needs a performance verdict names it as an input from that skill; **without it installed, the field stays "pending" and this mode still runs** on the other two signal sources, per the free↔paid downgrade rule in [`../../contracts/sister-product-compat.md`](../../contracts/sister-product-compat.md) §6.
+
+**This file's data-handling rules are the same set as [`grounded-inputs.md`](grounded-inputs.md), not a separate one**: anywhere below mentioning "customer language," "verbatim," or "source" follows that file's rules — only authorized, public/de-identified material; private DMs and customer-service transcripts stay excluded by default; without auditable authorization, only a rewritten insight ships, never a verbatim quote; a brief's "source" field is always the opaque triple `source_id/evidence_class/source_license` (e.g. `review-20260715-014/B/research_only`), never the original text.
 
 ---
 
-## 步驟一：讀三個訊號來源
+## Step 1: read three signal sources
 
-素材方向來自三個獨立訊號來源的綜合判斷。只看一個來源會誤導：帳戶數據只告訴你「你試過的東西裡什麼有效」，顧客語言告訴你「他們用自己的話說為什麼買」，原生內容告訴你「沒人付錢時這群受眾自己會看什麼」。
+Creative direction comes from combining three independent sources — reading only one misleads: account data tells you what worked among what you've tried, customer language tells you why they buy in their own words, native content tells you what this audience watches when nobody's paying for reach.
 
-| 訊號 | 要蒐集什麼 | 怎麼蒐集 |
+| Signal | What to gather | Where |
 |---|---|---|
-| **帳戶成效結論** | 依角度／鉤子／格式分的贏輸判定、漏斗診斷結論、疲乏判定、以及每一項的**結論等級**（可據以行動／待驗證線索） | **`campaign-analysis-iteration` 技能的輸出**。它才有分析單位、可比性、樣本量、成熟花費這幾道關卡。**本模式不直接讀廣告後台的原始報表數字自己判贏輸**——沒有那支技能的結論時，這一欄一律填「待判定」，用另外兩個訊號來源排產能 |
-| **顧客／品牌語言** | 痛點／渴望／疑慮的用語邏輯與反覆出現的措辭模式、意外的使用情境、實際購買者跟目標受眾是否一致 | 「有根據的輸入」素材庫（`inputs/reviews/`、`inputs/comments/`）——蝦皮／MOMO **公開**評論、Dcard／PTT **公開**留言。**客服對話紀錄不是常態訊號來源**——這是非公開的一對一溝通內容，只有在使用者明確表示已取得對話對象授權使用於行銷素材時才能納入，不要預設可以直接拿來用 |
-| **外部原生內容** | 這個利基受眾沒被付費引導時自己在看什麼：熱門原生內容的鉤子、格式、用語；跑很久的競品廣告（可推定有效） | [`copy-and-visual-production.md`](copy-and-visual-production.md)「原生感觀察帳號」提到的觀察帳號（Threads／Instagram／Dcard 精選版）、Meta／Google 廣告庫查詢工具 |
+| **Account performance conclusions** | Win/loss verdicts by angle/hook/format, funnel diagnosis, fatigue calls, each with a **conclusion tier** (actionable / needs-more-signal) | **`campaign-analysis-pro`'s output** (paid) — it owns the analysis-unit, comparability, and sample-size gates this needs. **Without it, this field is "pending"**; prioritize using the other two signals instead |
+| **Customer/brand language** | Recurring pain-point/desire/objection phrasing, unexpected use cases, whether actual buyers match the target audience | The input library (`inputs/reviews/`, `inputs/comments/`) — public reviews and comments; region sources in [`geo/tw.md`](geo/tw.md). **Customer-service transcripts aren't a standing source** — private one-to-one content, include only with explicit consent for marketing use |
+| **External native content** | Hooks, formats, and language performing organically for this audience with no ad spend behind it; competitor ads running a long time (a plausible signal of effectiveness) | [`copy-and-visual-production.md`](copy-and-visual-production.md)'s observation accounts (region-specific, [`geo/tw.md`](geo/tw.md)); Meta/Google ad-library lookup tools |
 
-**節奏：** 每月一次深度整理（60-90 分鐘，三個來源都看一遍，餵進當月產能表）＋每週一次約 20 分鐘的快速更新（有什麼變化：新的贏家/輸家、評論裡新出現的主題、什麼內容突然原生爆量）。超出下一個決策需要的研究是做白工——每次整理都該產出概念，不是產出筆記。
+**Cadence**: one deep pass monthly (60-90 min, all three sources, feeds that month's roadmap) + a ~20-minute weekly check-in (what changed: new winners/losers, new themes in reviews, anything suddenly going organically viral). Research beyond what the next decision needs is wasted effort — every pass should produce concepts, not notes.
 
-**根據性規則：** 每個 agent 提出的洞察都要附出處，**出處一律寫成不透明的三元組**（`review-20260715-014/B/research_only`），不寫原文、不寫帳號或暱稱、不寫貼文網址——概念庫、產能表、月複盤都是會長期保存並被傳閱的檔案，寫進去的原文等於永久留存的可反查資料。對照表留在 `inputs/`（見 [`grounded-inputs.md`](grounded-inputs.md)）。沒有 `source_id` 的洞察不進概念庫。
+**Grounding rule**: every insight cites its source as an opaque triple (`review-20260715-014/B/research_only`) — never the original text, handle, or post URL; the concept bank, roadmap, and monthly retro are long-lived, widely-circulated files. Mapping stays in `inputs/` (see [`grounded-inputs.md`](grounded-inputs.md)). An insight with no `source_id` doesn't enter the concept bank.
 
 ---
 
-## 步驟二：把訊號轉成附證據等級的概念
+## Step 2: turn signals into evidence-graded concepts
 
-一個**概念**是一個可測試的創意假設：*受眾片段 × 動機 × 角度 × 格式*，並附上證據。「給媽媽看的 UGC」不是一個概念；「新手爸媽失眠族群（依 40+ 則評論提到半夜三點餵奶）× 『安靜到不會吵醒寶寶』× Before/After 實測 × 第一人稱夜拍影片」才是。
+A **concept** is a testable creative hypothesis: *audience segment × motivation × angle × format*, with evidence attached. "UGC for moms" isn't a concept; "new sleep-deprived parents (per 40+ reviews mentioning 3am feedings) × 'quiet enough not to wake the baby' × before/after with real footage × first-person night-shot video" is.
 
-依支撐這個概念的最強證據分級：
+Grade by the strongest evidence behind it:
 
-| 等級 | 證據 | 權重 |
+| Tier | Evidence | Weight |
 |---|---|---|
-| 1 | 自己帳戶裡：同角度／受眾片段已經有在轉換的廣告 | 最強——迭代延伸 |
-| 2 | 顧客語言模式：公開評論／留言裡反覆出現的用字邏輯（改寫使用，不逐字引用，除非已取得授權） | 強——可以直接開發新素材 |
-| 3 | 競品廣告已經跑 60 天以上（**跑得久是「值得注意的訊號」，不是「已證實有效」**——也可能是品牌認知型預算、帳戶沒人管理、或目標不是直接轉換，跑很久不保證真的賺錢，只是比曇花一現的廣告更值得留意） | 好——借用角度，絕不照搬廣告本身 |
-| 4 | 利基受眾的原生互動（未付費的觀看／收藏） | 中等——先低成本驗證 |
-| 5 | 跨利基的模式（在鄰近品類有效過） | 弱——先放冰箱，等有更多佐證再拿出來 |
-| 6 | 團隊直覺，沒有外部訊號 | 最弱——低成本快測或直接放棄 |
+| 1 | Same angle/segment already converting in your own account | Strongest — extend it |
+| 2 | Customer-language pattern: recurring phrasing across public reviews/comments (rewritten, not verbatim unless authorized) | Strong — build new creative directly |
+| 3 | A competitor ad running 60+ days (**running long is "worth noticing," not "proven effective"** — could equally be a brand-awareness budget, an unmanaged account, or a non-conversion goal; longevity alone doesn't guarantee profitability, only that it outlasted a flash-in-the-pan ad) | Good — borrow the angle, never copy the ad |
+| 4 | Organic engagement in the niche audience (unpaid views/saves) | Moderate — validate cheap first |
+| 5 | Cross-niche pattern (worked in an adjacent category) | Weak — shelve until better-supported |
+| 6 | Team intuition, no external signal | Weakest — cheap test or skip |
 
-證據等級高低決定**優先順序**（排進產能表的順序早晚）；製作規格（見步驟四）是另一個判斷，取決於驗證強度、既有素材、產能、風險——即使是等級二的顧客語言概念，也要先用低成本版本跑一輪、拿到 `campaign-analysis-iteration` 的結論之後才升級規格（對照表見「規格分級」）。直覺不是禁止項目，只是便宜、排最後。
+Evidence tier decides **priority** (how soon it lands in the roadmap); production spec (Step 4) is a separate call driven by validation strength, existing assets, capacity, and risk — even a tier-2 concept runs on a low-cost spec first, upgrading only after a conclusion comes back (mapping in Spec tiers, below).
 
-**等級 1 的認定來自 `campaign-analysis-iteration`**：「已經有在轉換的廣告」是一個成效判定，不是看報表上某個數字好看就算。沒有那支技能的判定時，這類概念先歸到等級 2-4（依它實際有的外部證據），不要自己升到等級 1。
-
----
-
-## 步驟三：依帳戶狀態分岔
-
-對的素材組合取決於帳戶處在兩種狀態的哪一種。**這個狀態不是你在這裡判定的**——「帳戶目前算探索期還是放大期」等同「有沒有素材已經被判定為贏家」，那需要分析單位、可比性、樣本量、成熟花費這一整套關卡，屬於 `campaign-analysis-iteration`。本步驟做的是**依收到的狀態套用對應的產能配比**。
-
-**取得狀態的三種情況：**
-
-| 情況 | 怎麼做 |
-|---|---|
-| `campaign-analysis-iteration` 已給出狀態判定 | 直接套用下面對應的產能配比 |
-| 沒有判定，但使用者手上有成效資料 | **先去跑 `campaign-analysis-iteration`**，拿到結論再回來。不要自己看數字判 |
-| 沒有判定、也沒有成效資料（新帳戶、剛開始投） | 套用**探索期**配比，並標明「依帳戶尚無成效資料推定為探索期，非成效判定結果」 |
-
-**探索期**——`campaign-analysis-iteration` 判定沒有（或沒有新的）素材達到贏家標準：
-- 走**廣而不深**：大多數是全新概念，涵蓋不同受眾片段與角度；迭代版本占少數——迭代已被判定為輸家的概念只會複製更多輸家
-- **只迭代收到「可據以行動」或「待驗證線索」結論的概念**。這裡常見的誤用是「看到停留率上升就當成訊號繼續做」——單一指標的變化是訊號還是雜訊，要由 `campaign-analysis-iteration` 判定（它有樣本量門檻與可比性檢查）。**本技能不自己認定某個指標的進步值得追**，只依收到的結論等級排優先序：可據以行動 → 排進本月；待驗證線索 → 進冰箱區或低成本規格快測
-- 常見根因的檢查（素材太安全無聊、訊息太複雜、優惠不清楚、受眾太窄導致 CPM 懲罰）是**產出面的自我檢查清單**，不是成效判定，這部分照做沒問題
-
-**放大期**——`campaign-analysis-iteration` 判定一個以上的概念已達到可放大的標準：
-- 趁還開著的時候**深挖贏家**：以贏家概念為主的產能表，做視覺上明顯不同的變化版本（同一個訊息、不同執行方式——太像的版本只會互相蠶食既有觸及、學不到新東西，變化版要真的看起來不一樣），加上一條調性混音（贏家概念的不同情緒／語氣重新演繹）與細分角度探測（往贏家受眾片段內部再細挖），依預算、疲乏速度、產能速度調整比例
-- 即使在放大期也要保留一小部分探索配額——贏家會疲乏，下一個贏家很少是現在贏家的迭代版
-- 這個階段速度比精緻更重要：放大的窗口是有限的
+**Tier 1 requires `campaign-analysis-pro`'s determination** — "already converting" is a performance verdict, not a good-looking number on a report. Without that determination, don't self-promote a concept to tier 1; grade it 2-4 by whatever external evidence it actually has.
 
 ---
 
-## 步驟四：產能表（Roadmap）
+## Step 3: account phase (from `campaign-analysis-pro`, not judged here)
 
-維護一份持續更新的文件（建議放在 `roadmap.md`，跟「有根據的輸入」素材庫放一起），分三個時間範圍：
+The right creative mix depends on whether the account is exploring or scaling — that determination needs the same analysis-unit/comparability/sample-size gates as tier-1 grading, so it's `campaign-analysis-pro`'s call, not this file's.
+
+- **`campaign-analysis-pro` has a phase verdict** → apply its mix: **exploring** (no creative has cleared the winner bar yet) skews broad-and-shallow — mostly new concepts across segments/angles, only iterate on tier-1 or tier-2-with-actionable-conclusion work; **scaling** (one or more concepts have cleared the bar) skews deep-on-winners — visually distinct variations of the winning concept, a tonal remix, sub-segment probes, while still reserving a small explore slice (winners fatigue; the next winner is rarely a rehash of the current one).
+- **No verdict, but the user has performance data** → get the verdict from `campaign-analysis-pro` first, don't read the numbers yourself.
+- **No verdict and no data (new account)** → default to the **exploring** mix, and disclose "defaulted to exploring — no performance data yet, not a performance determination."
+
+---
+
+## Step 4: capacity roadmap
+
+Maintain a living document (`roadmap.md`, alongside the input library), three time horizons:
 
 ```
-## 冰箱區       — 所有概念，附證據等級與來源（三元組 `source_id/evidence_class/source_license`，不寫原文／帳號／網址），還沒排進時程
-## 本季         — 從冰箱區挑出的 2-4 個主題（這一季要下注的方向），附「為什麼是現在」
-## 本月         — 實際排上的產能表：概念 | 證據等級 | 製作規格 | 負責人 | 狀態
+## Shelf         — every concept, evidence tier + source (opaque triple, no raw text/handle/URL), not yet scheduled
+## This quarter  — 2-4 themes pulled from the shelf (what to bet on this quarter), with "why now"
+## This month    — the actual production schedule: concept | evidence tier | spec tier | owner | status
 ```
 
-本月產能表裡每個概念都要標**製作規格**：
+Every concept on this month's schedule gets a **spec tier**:
 
-| 規格 | 成本 | 是什麼 | 用在哪 |
+| Tier | Cost | What it is | Used for |
 |---|---|---|---|
-| **T1 — 迭代** | 幾小時 | 在既有素材上換新鉤子／文案／裁切 | 延伸已驗證的贏家 |
-| **T2 — 混音** | 幾天 | 用既有素材／AI 生成工具重新組出新素材 | 收到「待驗證線索」等級結論的概念 |
-| **T3 — 正式製作** | 幾週 | 全新拍攝、找創作者合作、完整製作 | **只有收到「可據以行動」等級結論的角度**，判定來源見下方「規格分級」 |
+| **T1 — iterate** | Hours | New hook/copy/crop on an existing asset | Extending a validated winner |
+| **T2 — remix** | Days | Recombine existing assets or generation tools into something new | Concepts with a "needs-more-signal" conclusion |
+| **T3 — full production** | Weeks | New shoot, creator partnership, full production | **Only angles with an "actionable" conclusion** — see Spec tiers, below |
 
-**升到 T3 的唯一依據是 `campaign-analysis-iteration` 給的結論等級，本表不另開捷徑**——「低成本版本已經出現漏斗訊號」不是升 T3 的理由，那是「待驗證線索」，最多到 T2。完整對照表與理由見本檔「規格分級」。
+**Promotion to T3 has one legal source, `campaign-analysis-pro`'s conclusion tier — this file offers no shortcut.** "The cheap version already showed a funnel signal" isn't grounds for T3; that's "needs-more-signal," T2 at most. Full mapping in Spec tiers.
 
-**產能檢查——讓產能表誠實的關鍵規則：** 算出團隊（或 AI 產線）這個月**在維持品質的前提下**實際能產出多少，產能表就照這個數字排。用 8 個概念的真實產能硬排 20 個概念的產能表，不會產出 20 支廣告，只會產出 20 支打折的廣告和一個燒壞的團隊。依證據等級排序，砍到符合實際產能為止。
+**Capacity check — the rule that keeps the roadmap honest**: compute what the team (or the AI pipeline) can actually produce this month **without sacrificing quality**, and schedule to that number. Forcing an 8-concept capacity to cover a 20-concept schedule doesn't produce 20 ads — it produces 20 diluted ones and a burned-out team. Sort by evidence tier, cut to fit.
 
-從產能表產出**每個概念一份簡報**（受眾片段、動機＋來源依據〔opaque 三元組 `source_id/evidence_class/source_license`，不是原文逐字〕、角度、格式、鉤子矩陣列、製作規格、成功指標），交給模式一（從零產出）或模式二（靜圖批次）去實際產出。
-
----
-
-## 步驟五：每月素材複盤
-
-迴圈的最後一步、也是下一輪的第一個輸入。每月一份文件（建議放 `retros/YYYY-MM.md`）。
-
-**這份複盤是「把 `campaign-analysis-iteration` 的判定結果，翻譯成下一輪要做什麼素材」，不是自己重跑一次成效判斷。** 前三個區段（贏家／輸家／指標贏家）的內容**全部來自那支技能的結論**，本技能負責的是後三段——從結論推出概念層級的學習與下一輪產能表。
-
-```
-## 贏家       — 概念、以及 campaign-analysis-iteration 給的「為什麼贏」（哪個元素帶來的）
-## 輸家       — 概念、那支技能判定死在漏斗哪一段、對應的失敗假設
-## 指標贏家   — 那支技能標為「待驗證線索」的（全漏斗未達贏家標準、但某一項指標有訊號）
-## 學到的事   — 模式層級的筆記 → 寫回冰箱區變成新的／修正過的概念
-## 淘汰       — 從冰箱區移除的概念，附理由
-## 下一輪產能表 — 下個月的初稿，更新過的證據等級
-```
-
-複盤規則：
-
-- **前三段沒有結論可填時，就空著並標「待 `campaign-analysis-iteration` 判定」**，不要自己看數字填。這是最容易破功的一步——手上有一份成效報表，很容易順手就開始分類贏輸
-- **評判概念、不是評判單支廣告，這一步是本技能的職責**：那支技能判定的是「這一支廣告／素材」的輸贏，把三個執行版本的判定往上收斂成「這個**概念**行不行」是素材策略的工作。但收斂時要看那支技能附的**可比性判定**——它若標明三支的測試條件不可比（受眾、版位、出價策略、歸因窗差異大），那就**不能收斂成概念層級的結論**，只能記成待驗證線索。同樣地，只有一個執行版本失敗也不能直接說「是執行的問題」
-- **看漏斗，不要只看 ROAS 那一欄**——這是**要求那支技能給漏斗層級的診斷**，不是自己拿漏斗數字判讀
-- **每個學到的事都要有去處**：進冰箱區更新、重新排證據等級、或淘汰。一個什麼都沒改動產能表的複盤只是一場會議，不是複盤
+Turn the roadmap into a **brief per concept** (segment, motivation + source, angle, format, hook-matrix row, spec tier, success metric), handed to Mode 1 (from scratch) or Mode 2 (static batch) for actual production.
 
 ---
 
-## 鉤子系統（濃縮版，供模式一／二產出鉤子，以及診斷「廣告表現不好時該修哪一段」時使用）
+## Step 5: monthly creative retro
 
-影片廣告的前 3 秒決定廣告剩下的部分還有沒有機會被看到。鉤子是付費素材裡槓桿最高的一個單位。
+The loop's last step and next cycle's first input. One document per month (`retros/YYYY-MM.md`).
 
-### 鉤子是三個元件的組合，不是一句話
+**This retro translates `campaign-analysis-pro`'s verdicts into next cycle's production plan — it doesn't re-run the performance judgment.** The first three sections below come entirely from that skill's conclusions; this file's job is the back half — turning verdicts into concept-level learning and next month's roadmap.
 
-| 元件 | 是什麼 | 任務 |
+```
+## Winners        — concept, and why it won per campaign-analysis-pro (which element drove it)
+## Losers         — concept, which funnel stage it died at per that skill, the failed hypothesis
+## Metric winners — flagged "needs-more-signal" (didn't clear the winner bar, but one metric showed a signal)
+## What we learned — pattern-level notes → written back to the shelf as new/revised concepts
+## Retired        — concepts dropped from the shelf, with reason
+## Next roadmap   — next month's draft, evidence tiers updated
+```
+
+Retro rules:
+
+- **No conclusion yet for the first three sections → leave them blank, tag "pending `campaign-analysis-pro`."** Don't judge from raw numbers yourself — this is the easiest place to break the rule, since a performance report sitting right there invites a quick eyeball sort.
+- **Judge concepts, not individual ads — this is this file's job**: that skill verdicts a single ad/asset; rolling several execution variants up into "does this concept work" is strategy work. But check its **comparability call** first — if it flags the variants as untested-under-comparable-conditions (different audience, placement, bid strategy, attribution window), don't roll them up into a concept-level verdict, log it as needs-more-signal instead. One failed execution doesn't mean "the execution was the problem" either.
+- **Read the funnel, not just the top-line metric** — this means **asking that skill for a stage-level diagnosis**, not reading funnel numbers yourself.
+- **Every learning needs a destination**: back to the shelf (new or revised), a re-graded evidence tier, or retired. A retro that changes nothing on the roadmap was a meeting, not a retro.
+
+---
+
+## Hook system (used by Mode 1/2 for hook production, and for diagnosing which part of a weak ad to fix)
+
+The first 3 seconds of a video ad decide whether the rest gets watched. The hook is the single highest-leverage unit in paid creative.
+
+### A hook is three parts, not one line
+
+| Part | What it is | Job |
 |---|---|---|
-| **視覺動作** | 0-3 秒畫面上實際發生的事 | 讓拇指停下來 |
-| **口白／台詞** | 旁白或對話的第一句話 | 打開懸念 |
-| **字幕文字** | 畫面上的標題／疊字 | 給靜音觀看的人錨定住主張 |
+| **Visual action** | What actually happens on screen in 0-3s | Stops the thumb |
+| **Voiceover/line** | The first spoken line | Opens a question |
+| **Caption text** | On-screen title/overlay | Anchors the claim for muted viewers |
 
-**不重複規則：** 三個元件要互補，不能互相重複。如果口白說「我不再付每月 2000 元的健身房費用」、字幕又疊上「不再付每月 2000 元」，三個位置浪費了兩個。強鉤子會分工——視覺呈現取消訂閱的畫面、口白說出那句話、字幕點出替代方案。靜圖廣告把這個結構縮成兩個元件（視覺＋標題）——同樣的規則適用：標題不能只是把畫面內容重講一次。
+**No-repeat rule**: the three parts complement, never restate each other. If the voiceover says "I stopped paying $60/month for a gym membership" and the caption also reads "no more $60/month," two of three slots were wasted saying the same thing. A strong hook divides the labor — visual shows the cancellation, voiceover states the line, caption names the alternative. Static ads compress this to two parts (visual + headline) — same rule: the headline can't just restate what's in the image.
 
-### 產出流程
-
-```
-受眾片段 → 動機 → 格式 → 鉤子（三元件）
-```
-
-1. **受眾片段**——這個鉤子對準哪一群具體的買家，不是整個 ICP，是有共同情境的一小群（來自「有根據的輸入」素材庫：公開評論、公開留言——不包含客服對話這類非公開內容，除非已取得授權）
-2. **動機**——驅動這個片段的單一痛點、渴望、或疑慮，**參考素材庫裡的用字邏輯重寫**，不要逐字複製——重寫時貼近顧客實際講話的方式（跟行銷腔的差異），但這不等於可以不經授權逐字引用原文，見本檔開頭的資料處理原則
-3. **格式**——街訪、第一人稱自拍、螢幕錄影、開箱、並排實測、純文字疊字靜圖、創辦人對鏡頭、reaction 轉發——先選格式再寫台詞，同一個動機用街訪回答的方式寫，跟用告解式對鏡頭的方式寫，讀起來完全不同
-4. **鉤子**——針對這個受眾片段×動機×格式的組合，寫出三個元件
-
-**用鉤子矩陣呈現**，讓涵蓋範圍看得見：
+### Production flow
 
 ```
-| # | 受眾片段 | 動機（來源三元組） | 格式 | 視覺動作 | 口白 | 字幕 |
+Audience segment → motivation → format → hook (three parts)
 ```
 
-橫向產出（涵蓋不同受眾片段×動機的組合），不要縱向產出（同一格反覆改寫）——10 個涵蓋 10 種組合的鉤子，勝過 30 個只改寫同一格的版本，跟靜圖版型庫「角度多樣性」的原則一致。
+1. **Audience segment** — who exactly this hook targets, a small group sharing a specific situation, not the whole ICP (from the input library: public reviews, public comments — not customer-service transcripts unless authorized)
+2. **Motivation** — the single pain/desire/objection driving this segment, **rewritten from the input library's phrasing logic**, not copied verbatim — matching how the customer actually talks, without unauthorized verbatim quoting (see the data-handling principles this file opens with)
+3. **Format** — street interview, first-person selfie, screen recording, unboxing, side-by-side test, text-overlay static, founder-to-camera, reaction/duet — pick format before writing the line; the same motivation reads completely differently written as a street-interview answer versus a confessional to-camera piece
+4. **Hook** — write the three parts for this segment × motivation × format combination
 
-### 從漏斗診斷結論對應到「該改素材的哪一段」
+**Present as a hook matrix** to make coverage visible:
 
-**這張表不是拿來自己讀數字判斷的。** 「這支廣告的 3 秒觀看率算不算弱」「CTR 下降是訊號還是雜訊」由 `campaign-analysis-iteration` 判定——它有樣本量門檻、可比性檢查、成熟花費規則。本技能拿到的是**「問題出在漏斗的哪一階段」這個結論**，這張表回答的是**拿到那個結論之後，素材要改哪一段**。
+```
+| # | Segment | Motivation (source triple) | Format | Visual action | Line | Caption |
+```
 
-用法：找到那支技能判定的階段那一列 → 看「怎麼修」欄 → 產出對應的新版本。
+Produce horizontally (covering different segment × motivation combinations), not vertically (rewriting the same row repeatedly) — 10 hooks covering 10 combinations beats 30 versions of one, same "diversity is coverage" principle as the static template library.
 
-**沒有那支技能的結論、只有原始數字時**：不要對照這張表自己判，回去跑 `campaign-analysis-iteration`。
+### From a funnel diagnosis to what to fix
 
-| 階段 | 對應指標 | 素材上最先該檢查的元件（不是唯一原因） | 怎麼修 |
-|---|---|---|---|
-| 停下 | 3 秒觀看率 | 視覺動作（跟字幕）——但也可能是版位、頻率疲乏、或受眾本身跟廣告不相關 | 先換新的視覺開場測一輪，同時排除版位/疲乏因素 |
-| 留下 | 停留率（3秒→15秒） | 承接鉤子的過渡段——但也可能是內容本身對這個受眾不夠有共鳴 | 重寫 3-15 秒，不是重寫鉤子 |
-| 點擊 | CTR | 渴望／優惠不夠清楚——但也可能是出價策略把廣告投給了不感興趣的受眾 | 收斂承諾、CTA、或證明力道；同時檢查受眾與出價設定 |
-| 轉換 | 點擊後轉換率 | 承接不連貫是常見原因之一（到達頁沒有延續廣告的承諾），**但不是唯一可能**——受眾與優惠本身不合、價格／流程本身的摩擦、出價策略帶來低意圖流量、或歸因窗設定跟實際購買週期不合，都可能造成弱轉換率，看到弱 CVR 不要直接斷定「一定是到達頁的問題」，先排除這些其他可能 | 檢查到達頁一致性（見 `landing-page-cro` 技能的訊息一致性檢查）**之前**，先確認流量品質（受眾／出價／歸因窗）沒有問題 |
+**Diagnosing which funnel stage failed (thin 3-second view rate vs. weak hold vs. weak CTR vs. weak post-click conversion) is `campaign-analysis-pro`'s call, not a table to self-apply against raw numbers** — same analysis-unit and sample-size gates as everywhere else in this file. `campaign-analysis`'s free tier gives one coarse signal worth routing on without the paid layer: rising CPM with falling CTR at stable targeting names creative fatigue and routes here — useful for "something in creative may be tired," not for which specific element to fix.
 
-一個好的 3 秒開場不代表是一支好廣告——誘導性視覺會吸引錯的觀眾，會出現高 3 秒觀看率＋停留率／轉換率崩掉的組合。**這也是為什麼贏家判定不在本技能**：單看一個階段的指標會得到相反的結論，要整個漏斗一起看、還要過樣本量與可比性關卡。每輪測試只改一個元件（視覺、過渡段、或優惠呈現方式擇一），跟 `SKILL.md`「常見錯誤」裡的單一變數原則一致。
+Once a stage-level diagnosis is in hand: stopped → test a new visual open (and rule out placement/fatigue/audience mismatch); held → rewrite the 3-15s bridge, not the hook; clicked-but-didn't-convert → tighten the promise/CTA/proof, but also check bid strategy and attribution window before assuming it's the creative; check landing-page message match (`landing-page-cro`) only after ruling out traffic-quality causes.
 
-### 規格分級
+A strong 3-second open doesn't guarantee a good ad — a misleading visual pulls in the wrong viewer, producing high initial view rate paired with a collapsed hold/conversion rate (part of why winner verdicts live outside this file — a single-stage metric alone can point the wrong way). Change one element per test (visual, bridge, or offer framing) — the same single-variable rule as `SKILL.md`'s hard rules.
 
-製作成本要對應證據強度：直覺先用低成本規格測（靜圖、純文字疊字影片、既有素材混音，1-2 天內），目標是便宜驗證角度，不是做出精緻廣告；已驗證的角度才值得投入高規格（找創作者拍攝、街訪、實景演示）。
+### Spec tiers
 
-**「已驗證」的判定來源只有一個：`campaign-analysis-iteration` 的結論等級。**
+Production cost should track evidence strength: test intuition cheap (static, text-overlay video, remixed existing assets, 1-2 days) to validate the angle cheaply, not to produce a polished ad; only a validated angle earns full-production investment (creator shoots, street interviews, live demos).
 
-| 收到的結論 | 可以升到的製作規格 |
+**"Validated" has exactly one source: `campaign-analysis-pro`'s conclusion tier.**
+
+| Conclusion | Spec tier it unlocks |
 |---|---|
-| **可據以行動**（過了樣本量與可比性關卡的贏家判定） | T3 正式製作 |
-| **待驗證線索**（有訊號但未過關卡） | 最多 T2 混音——**不要因為單一指標好看就直接升 T3** |
-| 尚無結論（新概念、還沒投過） | T1／T2 低成本快測 |
+| **Actionable** (cleared the sample-size and comparability gates) | T3 full production |
+| **Needs-more-signal** (a signal, hasn't cleared the gates) | T2 remix at most — **a single good-looking metric isn't grounds for T3** |
+| No conclusion yet (new concept, untested) | T1/T2 cheap test |
 
-**不要拿單一指標自己認定「這個角度已驗證」**——這正是本技能最容易越界的地方：看到某支的停留率特別高就把它升級成正式製作，等於用一個未過關卡的數字押上幾週的製作預算。用昂貴拍攝去測直覺、用隨手做的靜圖去測已驗證角度，都是浪費。
-
----
-
-## 常見失敗模式
-
-- **沒讀三訊號就排產能表**——沒讀訊號就排出來的產能表是願望清單，沒有診斷就測試不是策略
-- **探索期塞滿迭代版本**——輸家不斷打磨，真正的問題（角度、優惠、受眾）卻沒被測到
-- **忽略產能上限**——排一個團隊做不到的計畫，等於計畫做出一堆半成品
-- **沒有證據的概念插隊**——最大聲的利害關係人的直覺直接跳去做 T3 正式拍攝，等級二的顧客語言概念卻還在冰箱區排隊
-- **複盤變成形式**——歌頌贏家，什麼都沒重新排序，冰箱區沒有更新
-- **放大期自滿**——產能表 100% 都是贏家的變化版本，贏家一旦疲乏，後面就沒東西可以接上
+**Don't self-declare "this angle is validated" from one metric** — the most common way this file gets misused: a strong hold rate on one execution shouldn't fast-track it into full production, that's committing weeks of budget on a number that never cleared the gate. Expensive shoots to test hunches, and throwaway statics to test validated angles, both waste the mismatch.
 
 ---
 
-*來源脈絡：本檔案在地化自 marketingskills 專案的 `references/creative-roadmap.md`（策略迴圈骨架）與 `references/hook-system.md`（鉤子系統，濃縮進本檔）。*
+## Common failure modes
+
+- **Building the roadmap without reading the three signals** — a roadmap built on no signal is a wish list; testing without a diagnosis isn't strategy
+- **Filling the exploring phase with iterations** — losers get endlessly polished while the real problem (angle, offer, audience) never gets tested
+- **Ignoring capacity** — scheduling more than the team can produce guarantees a stack of half-finished work
+- **Ungrounded concepts cutting the line** — the loudest stakeholder's hunch jumps straight to a T3 shoot while a tier-2 customer-language concept still waits on the shelf
+- **Retros as theater** — celebrate the winners, reorder nothing, shelf never updated
+- **Complacency in the scaling phase** — a roadmap that's 100% variations on the current winner leaves nothing ready once it fatigues

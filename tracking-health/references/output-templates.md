@@ -1,64 +1,64 @@
-# 輸出格式：追蹤計畫文件
+# Output format: the tracking plan document
 
-## 事件屬性標準表（設計追蹤計畫時的欄位參考）
+## Event property standard table (field reference for designing a tracking plan)
 
-| 分類 | 屬性 |
-|------|------|
-| 頁面 | page_title, page_location, page_referrer |
-| 使用者 | user_id, user_type, account_id, plan_type（**都是假名識別碼＝個資**，用之前先過 [privacy-compliance.md](privacy-compliance.md) 的四個前提；能用 `user_type` 這種粗粒度回答決策時就不要送 `user_id`。**`account_id`／會員編號要逐案判斷**——等於登入帳號、公開商家代號或連號可枚舉的，是直接識別資訊，不得送） |
-| 廣告活動 | source, medium, campaign, content, term |
-| 商品 | product_id, product_name, category, price |
+| Category | Properties |
+|---|---|
+| Page | `page_title`, `page_location`, `page_referrer` |
+| User | `user_id`, `user_type`, `account_id`, `plan_type` (**all pseudonymous identifiers — personal data**; check [privacy-compliance.md](privacy-compliance.md)'s four preconditions before using any of them; prefer a coarse field like `user_type` when it already answers the decision instead of sending `user_id`. **`account_id`/member number needs a case-by-case call** — anything equivalent to a login handle, a public seller code, or an enumerable sequential ID is a direct identifier and must not be sent) |
+| Ad campaign | `source`, `medium`, `campaign`, `content`, `term` |
+| Product | `product_id`, `product_name`, `category`, `price` |
 
-最佳實務：屬性命名保持一致、附上相關情境、不要重複自動帶入的屬性、**屬性裡不放直接識別資訊**（email／電話／姓名／身分證字號／地址／可反查的完整訂單編號，無例外），**假名識別碼要逐欄填下方的資料盤點表**（見 [privacy-compliance.md](privacy-compliance.md) 的兩層對照表與四個前提，以及 [url-pii-protection.md](url-pii-protection.md)——`page_location` 由 GA4 隨每個事件自動帶入，不是靠這張表的欄位設計擋得掉的）。
+Best practice: keep property naming consistent, attach relevant context, don't duplicate what's auto-collected, **never put a direct identifier in a property** (email/phone/name/national ID/address/reverse-identifiable order number, no exception), and **fill in the data-inventory row below for every pseudonymous identifier** (see [privacy-compliance.md](privacy-compliance.md)'s identifier table and four preconditions, plus [url-pii-protection.md](url-pii-protection.md) — `page_location` is auto-attached by GA4 to every event; no property-design table blocks that on its own).
 
-## 追蹤計畫文件範本
+## Tracking plan template
 
 ```markdown
-# [網站／產品] 追蹤計畫
+# [Site/product] tracking plan
 
-## 總覽
-- 工具：GA4、GTM、LINE Tag
-- 最後更新：[日期]
+## Overview
+- Tools: GA4, GTM, [any GEO-specific tag]
+- Last updated: [date]
 
-## 事件
+## Events
 
-| 事件名稱 | 說明 | 屬性 | 觸發時機 |
+| Event name | Description | Properties | Trigger timing |
 |----------|------|------|----------|
-| purchase | GA4 官方電商事件 | transaction_id, currency, value, items | 後端訂單狀態確認為已付款時（支付 webhook）**由伺服器送出唯一一筆**；付款成功頁不送 GA4 purchase（成功頁若有其他廣告平台的轉換代碼，那是各該平台的事件，不是第二筆 GA4 purchase） |
-| signup_completed | 使用者完成註冊 | method, plan | 成功頁 |
-| line_oa_add_clicked | 點擊加入好友按鈕（意圖訊號，非加入數） | source | 按鈕點擊 |
+| purchase | GA4 official ecommerce event | transaction_id, currency, value, items | Sent once, server-side, when the backend confirms the order as paid (payment webhook); the success page never sends GA4 purchase (a conversion tag on the success page for a different ad platform is that platform's own event, not a second GA4 purchase) |
+| signup_completed | User completed registration | method, plan | Success page |
+| [GEO-specific intent event, e.g. an add-friend click] | Intent signal, not a count of completions | source | Button click |
 
-## 自訂維度
+## Custom dimensions
 
-| 名稱 | 範圍 | 參數 |
+| Name | Scope | Parameter |
 |------|------|------|
-| user_type | 使用者 | user_type |
+| user_type | User | user_type |
 
-## 轉換
+## Conversions
 
-| 轉換 | 事件 | 計算方式 |
+| Conversion | Event | Calculation |
 |------|------|----------|
-| 購買 | purchase | 依 transaction_id 去重計算 |
-| 註冊 | signup_completed | 每個 session 計一次 |
+| Purchase | purchase | Deduplicated by transaction_id |
+| Signup | signup_completed | Once per session |
 
-## 資料盤點結果（個資法第 19／20 條判斷依據）
+## Data inventory results (legal-basis judgment per the GEO module's specific articles)
 
-> 每一列都要實際填，**不要沿用範本的預設判斷**——同一個欄位在不同客戶、不同利用目的下的答案不一樣。
+> Fill every row for real — **don't leave the template's placeholder answer in place**. The same field's answer differs by client and by use purpose.
 
-| 欄位 | 分類 | 判斷理由 | 第 19 條合法基礎與特定目的 | 利用目的 | 第 20 條是否超出原目的 | 保留期限 | 可存取者 |
+| Field | Category | Reasoning | Collection legal basis and stated purpose | Use purpose | Beyond original purpose? | Retention | Who can access |
 |---|---|---|---|---|---|---|---|
-| client_id | 假名識別碼（個資） | 可跨 session 關聯回同一裝置 | 〔填：哪一款、告知的特定目的是什麼〕 | 〔填〕 | 〔填：是／否＋理由〕 | 〔填：GA4 資料保留設定值〕 | 〔填〕 |
-| user_id | 假名識別碼（個資） | 後端有對應表可反查真實會員 | 〔填〕 | 〔填〕 | 〔填〕 | 〔填：含後端對應表的刪除排程〕 | 〔填：含誰能存取對應表〕 |
+| client_id | Pseudonymous identifier (personal data) | Links back to the same device across sessions | [fill: which basis, what purpose was disclosed] | [fill] | [fill: yes/no + why] | [fill: GA4 retention setting] | [fill] |
+| user_id | Pseudonymous identifier (personal data) | Backend holds a mapping table that reverses to the real member | [fill] | [fill] | [fill] | [fill: including the backend mapping table's deletion schedule] | [fill: including who can reach the mapping table] |
 
-## 驗證紀錄
+## Verification record
 
-| 檢查項 | 日期 | 結果 | 證據 |
+| Check | Date | Result | Evidence |
 |---|---|---|---|
-| 敏感頁**整段流程**所有 GA4 payload 無直接識別資訊（不只第一個請求） | | | Network 分頁欄位清單／canary 測試結果 |
-| 網址 path／query／fragment 三處都檢查過 | | | 逐處檢查紀錄 |
-| transaction_id 雙向測試 | | | 重整 3 次同 ID／兩筆訂單不同 ID |
-| 後端事件過 /debug/mp/collect（validationMessages 為空） | | | debug 端點回應 |
-| 金流 webhook：偽造簽章被拒、重送不重複計、授權未請款不送 purchase | | | 三種情境的測試紀錄 |
+| No direct identifier in any GA4 payload across the **whole flow** on a sensitive page (not just the first request) | | | Network-tab field list / canary test result |
+| URL path/query/fragment all three checked | | | Per-segment check record |
+| transaction_id bidirectional test | | | 3 reloads, same ID / two orders, different IDs |
+| Backend event passed /debug/mp/collect (validationMessages empty) | | | Debug-endpoint response |
+| Payment webhook: forged signature rejected, resend not double-counted, authorized-not-captured doesn't send purchase | | | Test record for all three scenarios |
 ```
 
-**交付時要一併說明能量到什麼、量不到什麼**——特別是封閉電商平台的歸因限制與 LINE 加好友的量測邊界，不要讓客戶誤以為報表上的每個數字都有同樣的可信度。
+**State clearly at delivery what's measured and what isn't** — especially closed-marketplace attribution limits and any GEO-specific measurement boundary (see the applicable `references/geo/<code>.md`) — don't let the client assume every number in the report carries the same confidence level.

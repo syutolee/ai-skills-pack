@@ -1,72 +1,60 @@
-# AI 行銷技能包（台灣在地化）
+# AI 廣告技能包 v2（免費層）— syutolee.com
 
 *[Read this in English](README.en.md)*
 
-給 Claude Code 等 agent 工具直接載入的行銷技能包，符合 Agent Skills 技術規格，全篇繁體中文。深度在地化改作自 [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills)（MIT），**不是翻譯**——平台選擇、案例情境、法規脈絡、量測限制全部換成台灣媒體採購實際會遇到的東西。授權見 `LICENSE`，逐技能的來源與改作說明見各技能目錄下的 `NOTICE.md`。
+給 Claude Code 等 agent 工具直接載入的數位廣告技能包，符合 [Agent Skills 規格](https://agentskills.io/specification.md)。全英文技能內容（含台灣在地 GEO 模組），這份 README 是唯一的中文門面。部分內容深度在地化改作自 [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills)（MIT），經本包自己的 v1 沿用至今；完整來源鏈見 `NOTICE.md`，授權見 `LICENSE`。
 
-## 技能怎麼分的
+## 這個包在做什麼
 
-技能邊界按**行銷知識由上而下的依賴關係**畫，不是按「工具功能」分：
+一套跑數位廣告的資產層。貼一個產品或商店網址，agent 掃描首頁，寫出起手 `profile.md` 跟幾個未驗證的切角候選，接著分兩條線走：**策略線**（設角度、上架、出素材）跟**資料線**（追蹤健不健康、數字判斷該不該繼續燒）。
 
 ```
-        ┌─────────────────────────────────────────────┐
-        │  1. tracking-health（追蹤健康度）            │  ← 橫向地基
-        │     各層的判斷都建立在這裡的數字可不可信      │
-        └─────────────────────────────────────────────┘
-
-  2. quick-angle（快速切角）
-     不做研究與驗證，只把你對三個問題的回答整理成下游讀得懂的切角文件
-                  ↓
-   ┌──────────────┼──────────────┐
-   ↓              ↓              ↓
- 3a. ad-creative  3b. landing-   3c. ads
-   （廣告素材）     page-cro       （投放執行）
-                  （到達頁 CRO）
-   └──────────────┼──────────────┘
-                  ↓
-  4. campaign-analysis-iteration（成效分析與迭代判斷）
+kickoff（掃網址）→ quick-angle（切角）
+                        │
+          ┌─────────────┴─────────────┐
+          ↓                           ↓
+    ads + ad-creative           tracking-health
+    （選平台/預算/受眾/       （追蹤設定/除錯/
+     文案/素材規格）           隱私合規）
+          │                           │
+          └─────────────┬─────────────┘
+                        ↓
+              campaign-analysis
+        （絕對停損判斷：燒過頭了沒）
+                        │
+                        └──→ 判斷結果回饋到 ads / ad-creative，迴圈繼續
 ```
 
-各層的邊界、交接方式，以及沒有切角文件時每支技能具體差在哪，見 [`ROADMAP.md`](ROADMAP.md)。
+## 免費層六支技能
 
-## 本包提供的六個技能
+| 技能 | 負責什麼 |
+|---|---|
+| `kickoff` | 靜態掃描產品網址，寫出起手 `profile.md` 跟 2-3 個未驗證切角候選 |
+| `quick-angle` | 三個問題（要打誰、憑什麼贏、對比誰），整理成 `.agents/positioning.md` |
+| `ads` | 平台選擇、帳戶結構、預算、受眾、合規複核，只給建議，不動真帳戶 |
+| `ad-creative` | 角度、文案、視覺規格：標題、內文、靜圖概念 |
+| `tracking-health` | 追蹤有沒有壞：驗證、除錯、修（GA4/GTM/像素/UTM） |
+| `campaign-analysis` | 絕對停損判斷：燒錢有沒有燒過該停手的點 |
 
-| 技能 | 負責什麼 | 明確不負責 |
-|---|---|---|
-| **tracking-health** | 建立、健檢、除錯追蹤與量測；個資外洩防護；歸因限制 | — |
-| **quick-angle** | 問三題（要打誰、憑什麼贏、對比誰），整理成 10-20 行的切角文件供下游使用 | 市場研究、驗證主張是否成立、產出多個候選切角 |
-| **ads** | 選平台、搭帳戶結構、配預算、設受眾、過台灣廣告合規 | 成效判斷（→ 4）、素材產出（→ 3a）、帳戶操作（不執行） |
-| **ad-creative** | 定角度、寫文案、出靜圖概念、規劃素材產能 | 成效分析與贏輸判斷（→ 4） |
-| **landing-page-cro** | 用 LIFT 六因子診斷到達頁；訊息一致性檢查 | 統計判定（→ ab-testing，未提供） |
-| **campaign-analysis-iteration** | 從資料判斷該不該繼續——觸發關閉門檻／留／放大、素材該不該換 | 產素材、改設定、操作帳戶 |
-
-**每支技能都是「輕量路由入口（SKILL.md）＋主題化 references/」的漸進揭露結構**：SKILL.md 只放角色定義、範圍邊界、硬性規則與路由表，實際的門檻、清單、範本在 `references/` 裡按需載入。
-
-## 沒有切角文件也能用
-
-三個戰術技能（`ads`／`ad-creative`／`landing-page-cro`）會在開始前檢查專案內有沒有切角／價值主張文件：
-
-- **有** → 讀過再開始，並以它為基準
-- **沒有** → **照樣可以做**，但會據實告知「這是在沒有策略基礎的前提下給的通用執行建議」，並說明少了哪一層判斷
-
-這是**軟性提示，不是硬擋**。技能不會因為你沒有切角文件就拒絕工作，但也不會假裝有。
-
-手邊沒有切角文件時，`quick-angle`（本包已含）會問三個問題並把回答整理成 `.agents/positioning.md`，上述三支技能就讀得到。它不做市場研究、不驗證答案是否成立，只把答案落成下游讀得懂的檔案，產出的文件會寫明這一點。
+這六支技能組成一個完整的「掃描、定角度、上架、出素材、查追蹤、抓停損」迴圈，沒有一支會因為缺付費模組就卡住不動；各自的降級寫法見對應 `SKILL.md`。
 
 ## 怎麼安裝
 
-把整個 `ai-skills-pack/` 底下的技能目錄放進你的 agent 環境的 skills 目錄（Claude Code 是 `~/.claude/skills/` 或專案的 `.claude/skills/`），一支技能一個目錄，`SKILL.md` 的 `name` frontmatter 需與所在目錄名稱相同。
+Clone 這個 repo，或直接下載後解壓縮，把技能目錄放進你的 agent 環境的 skills 目錄：
 
-**建議整包一起安裝。** 技能之間有交叉引用（例如 `ad-creative` 產出受規管產業的素材時，**強制載入** `ads` 的台灣廣告合規檔）；只裝其中一支時，讀不到的部分有各自的降級處理，但功能會受限——受規管產業的素材產出在缺少合規檔時只會輸出待人工複核的骨架，這是刻意設計的 fail-closed 行為。
+```
+git clone https://github.com/syutolee/ai-skills-pack.git
+```
 
-## 這個包的幾條貫穿原則
+- **Claude Code**：`~/.claude/skills/`（全域）或專案的 `.claude/skills/`
+- **符合 Agent Skills 規格的其他 host**：`.agents/skills/`
 
-1. **不捏造**——沒有資料就講沒有資料，並說明要什麼資料才能產出，不用推測補到看起來完整
-2. **「先等」跟「沒效」是兩個結論**——樣本不足時不要講成沒效
-3. **量不到就講量不到**——封閉電商平台的站內歸因、LINE 加好友的實際數，賣家拿不到就不要在報表上假裝拿得到
-4. **法規段落附條文與查證日期，且明講不是法律意見**——正式投放前請客戶端法務或合規窗口複核
-5. **不對客戶承諾特定倍數的成效提升**——用「值得測試」而非「保證有效」
+把 `contracts/`、`shared/` 跟六支技能目錄放在同一層，不要巢狀塞進某支技能底下。每支技能 `SKILL.md` frontmatter 的 `name` 要跟目錄名稱一致。建議整包一起裝：技能之間會互相檢查對方在不在，缺了會走各自的降級分支，但功能受限。
+
+## 付費層
+
+另外有一組付費模組，涵蓋比較性成效判斷、到達頁診斷、追蹤架構設計、實驗設計跟素材渲染。細節與洽詢見 [syutolee.com](https://syutolee.com)。
 
 ## 授權
 
-MIT。`LICENSE` 檔內有兩則版權聲明：**Copyright (c) 2025 Corey Haines**（上游專案 coreyhaines31/marketingskills，依 MIT 條款隨改作保留；**含 `landing-page-cro` 的「標題鏡射」一節**，該節改作自原版 `ads/SKILL.md`）與 **Copyright (c) 2026 syutolee.com**（四支技能的在地化改作內容、`quick-angle` 全部內容、`landing-page-cro` 除「標題鏡射」以外的原創內容、所有參考檔中新增或重寫的段落，以及 README／ROADMAP／各 NOTICE）。兩者皆以 MIT 授權釋出。逐技能的來源、鎖定版本與改作性質見各技能的 `NOTICE.md`。
+MIT。`LICENSE` 內兩則版權聲明：**Copyright (c) 2025 Corey Haines**（上游 `coreyhaines31/marketingskills`，依 MIT 條款隨改作保留）與 **Copyright (c) 2026 syutolee.com**（本包原創內容跟英文重寫改作）。逐檔來源與改作性質見 `NOTICE.md`。

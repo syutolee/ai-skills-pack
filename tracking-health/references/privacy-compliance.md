@@ -1,108 +1,89 @@
-# 隱私與合規（個人資料保護法為主，含多法域疊加判斷）
+# Privacy and compliance: general principles
 
-> 以下是操作面提醒與現行條文摘要，不是法律意見。附來源與查證日期；具體適用視個案事實而定，正式導入前請客戶端法務或合規顧問複核。
+> This is an operational reminder and a summary of technique, not legal advice. Region-specific legal basis, citations, and notice requirements live in `references/geo/<code>.md` — this file covers only what holds regardless of jurisdiction. Confirm with the client's own legal or compliance counsel before rollout.
 
-## 台灣的合規基礎跟歐美不同
+## Direct identifier vs. pseudonymous identifier — the line that governs everything else
 
-原版技能這一節以 GDPR（歐盟）／CCPA（美國）為主。台灣的隱私合規基礎是**個人資料保護法（PDPA）**，邏輯不同，不能直接套用。
+`SKILL.md` hard limit 1 bans direct identifiers from analytics tools; hard limit 2 allows `user_id`/`client_id`/UUID-style IDs. These aren't in tension — they're two different tiers of rule:
 
-- **法規全文**：《個人資料保護法》，全國法規資料庫 <https://law.moj.gov.tw/LawClass/LawAll.aspx?PCode=I0050021>（查證日期：2026-07-20）
-- **蒐集／處理／利用的基本原則**（第 5 條）：應尊重當事人權益，依誠實信用方法為之，不得逾越特定目的之必要範圍，並應與蒐集之目的具有正當合理之關聯
-- **非公務機關蒐集或處理個資的合法基礎**（第 19 條）：需具備特定目的，並符合法條列舉的條件之一（法律明文規定、與當事人有契約或類似契約關係、當事人自行公開或其他已合法公開之個人資料、學術研究、經當事人同意、有利於當事人權益等）
-- **現行條文本身未使用「Cookie」一詞**，沒有專門針對 Cookie 或網站分析追蹤的獨立規範條款——這代表台灣目前沒有像 GDPR 那樣「先取得同意才能載入分析工具」的明文強制要求，但這不等於分析追蹤完全不受個資法規範
-
-**近期修法動態（查證日期：2026-07-20）**：依公開報導，立法院已三讀通過個資法修正案，將設立獨立的「個人資料保護委員會」（PDPC），但確切施行日期截至查證時尚未公告。台灣的個資執法正在往更嚴格的方向調整，建議定期複查，不要把本節當成一次到位的定論。
-
-## 假名化 vs 匿名化（最常被誤用的一組詞）
-
-事件屬性裡不放個資（email、電話、姓名、完整訂單編號），改用內部系統的**假名化（pseudonymized）ID** 關聯。**正確說法是「假名化」不是「匿名化」**：如果你自己的後端存有「這個分析 ID ↔ 哪個真實客戶」的對應表，能夠反查回特定個人，這個 ID 就是假名化，在個資法底下通常仍算「間接可識別」的個人資料。
-
-**「雜湊過就是匿名化」是錯的。** 雜湊是不是可逆，跟這筆資料能不能識別到特定個人，是兩個不同的問題。email、電話、身分證字號這類欄位的**取值空間本身就小、格式固定**，拿到雜湊值的人可以直接把已知清單逐一雜湊來比對（字典攻擊／彩虹表），或用同樣的雜湊值跟別的資料集做關聯。加 salt 只提高攻擊成本，只要你自己留著 salt 與原始資料（或原始資料本來就可枚舉），仍然能對應回特定個人。
-
-**判斷是不是匿名化，看的是「重識別風險評估」的結果，不是用了哪一種技術**——評估的問題是：任何人（包含你自己、資料接收方、以及能取得其他公開資料集的第三方）用合理可得的方法與成本，能不能把這筆資料關聯回特定個人？要真的做到匿名，靠的是降低資料本身的可辨識度：
-
-- **聚合（aggregation）**：只輸出群體層級的統計數字，不輸出個人層級的列
-- **泛化（generalization）**：把精確值變粗（出生日期 → 出生年；完整地址 → 縣市；精確時間戳 → 日期）
-- **抑制（suppression）**：小樣本的格位直接不輸出，避免「這個組合只有一個人」
-- **併同評估準識別欄位的組合**：地區＋年齡＋性別＋職業這種組合即使每個欄位單獨看都不算個資，湊在一起也可能指向唯一一個人
-
-在這些處理之前，可反查、或雖不可反查但仍能被枚舉／關聯回個人的資料，一律當成**假名化的個人資料**繼續受個資法規範。不要對客戶說「我們有雜湊過，所以不是個資」。
-
-### 「直接識別資訊」與「假名識別碼」是兩種不同的東西，管制方式也不同
-
-技能主檔的紅線 1 禁止直接識別資訊進分析工具，紅線 2 又允許用 `user_id`／`client_id`／UUID——這不是矛盾，是兩層不同的規則：
-
-| | 直接識別資訊（**含它的雜湊值**） | opaque 假名識別碼 |
+| | Direct identifier (**including its hash**) | Opaque pseudonymous identifier |
 |---|---|---|
-| 例子 | email、電話、姓名、身分證字號、地址、信用卡號、可反查特定人的完整訂單編號，**以及以上任何一項的雜湊值**（`sha256(email)`、加 salt 的電話雜湊都算） | `client_id`、隨機 UUID 的 `transaction_id`、後端隨機產生且與帳號無關的內部 `user_id` |
-| 進得了一般分析工具欄位嗎 | **不行，無例外**——這同時是 Google Analytics 的平台政策（[Google 政策要求](https://support.google.com/analytics/answer/6366371)，查證日期：2026-07-20），違反可能導致資源被停用。「使用者有同意」不能解除，「我們有雜湊過」也不能解除 | **可以，但要當個資管**（見下方四個前提） |
-| 為什麼 | 平台政策 ＋ 一旦外洩就是直接指向本人。雜湊值同樣指向本人：這些欄位取值空間小、格式固定，拿到雜湊值的人把已知名單逐一雜湊就能比對出是誰，也能用同一個雜湊值跨資料集串接 | 取值是隨機的、拿不到你後端對應表的第三方無法反推是誰。個資法上仍屬「間接識別」的個人資料，受規範但不被平台政策禁止 |
+| Examples | Email, phone, name, national ID, address, credit card number, a reverse-identifiable full order number, **and any hash of the above** (`sha256(email)`, a salted phone hash all count) | `client_id`, a random-UUID `transaction_id`, a backend-random internal `user_id` unrelated to the account |
+| Allowed in a general analytics tool field? | **No, no exception** — also Google's own platform policy, violating it can get the resource suspended. "The user consented" doesn't waive it; "we hashed it" doesn't either | **Yes, but treat it as personal data** (four preconditions below) |
 
-**分界線不是「有沒有雜湊」，是「拿到這個值的第三方能不能反推出是誰」。** 判斷方式：假設有人只拿到這一欄的所有值（外洩、匯出、代理商權限），他手上再有一份常見的 email／電話清單，能不能靠比對把值對回特定人？可以就是直接識別資訊那一欄，跟有沒有雜湊、有沒有加 salt 無關。
+last_verified: 2026-07-20
+Source: Google Analytics Help, "Prohibited uses" — https://support.google.com/analytics/answer/6366371
+| Why | Platform policy, plus it points directly back to a real person the moment it leaks. A hash points back just as directly: these fields have small, fixed value spaces, so anyone with the hash can enumerate a known list through the same hash function and match it, or join it across datasets by the hash value alone | Random by construction — a third party without your backend's mapping table can't reverse it. Still "indirectly identifying" personal data under most privacy law, just not platform-policy-prohibited |
 
-**`account_id`、會員編號、`user_id` 要逐案判斷，不能預設為 opaque**：如果它就是使用者的登入帳號、公開的商家代號、手機號碼、或連號可枚舉的會員編號，那它是直接識別資訊。只有「後端隨機產生、跟任何對外可見的值都無關」的識別碼才算 opaque。判不出來就當直接識別資訊處理。
+**The dividing line isn't "was it hashed," it's "can a third party who gets this value reverse it to a specific person."** Test: if someone obtained only this one column's values (a leak, an export, agency-level access) plus a common list of emails/phone numbers, could they match values back to individuals? If yes, it's a direct identifier regardless of hashing or salting.
 
-**Enhanced Conversions／CAPI 這類專用管道是另一件事**：Google Enhanced Conversions、Meta Conversions API 的比對欄位確實要送雜湊後的 email／電話，那是**平台指定的專用欄位與專用端點**，有各自的格式規範（正規化後 SHA-256）與資料使用條款。可以做，但兩件事不能混淆：①它**不代表**同樣的雜湊值可以塞進 GA4 的一般事件參數或自訂維度——那仍然違反平台政策 ②走這個管道是把個資提供給第三方廣告平台並傳輸境外，屬另一個利用目的，要過第 20 條那一關（見下方利用目的對照表）。
+**`account_id`, member number, and `user_id` need a case-by-case call, never a default "opaque"**: if it's the user's own login handle, a public seller code, a phone number, or a sequential/enumerable member number, it's a direct identifier. Only an identifier that's "backend-random, with no relationship to anything publicly visible" qualifies as opaque.
 
-**用假名識別碼的四個前提**（缺一就是拿「反正雜湊過」當免死金牌）：
+**Enhanced Conversions / Conversions API is a separate channel, not an exception**: sending a hashed email/phone to Google Enhanced Conversions or Meta's Conversions API is legitimate — those are **platform-designated fields and endpoints** with their own format spec (normalize, then SHA-256) and data-use terms. Two things not to conflate: ① it does **not** mean the same hash can go into a general GA4 event parameter or custom dimension — that's still a platform-policy violation ② sending data through this channel hands personal data to a third-party ad platform, often across borders — that's a separate use purpose from on-site analytics and needs its own legal basis (see the GEO module).
 
-1. **合法基礎與特定目的**：講得出第 19 條的哪一款、以及蒐集時告知的特定目的是什麼；要拿去做超出該目的的事（例如把分析資料拿去做名單行銷），另過第 20 條
-2. **最小化**：能用粗粒度就不要用細的（能用「會員／非會員」就不要送 `user_id`）、報表用不到的識別碼就不要送進去。送 `user_id` 前先問「少了它，哪一個決策做不成」
-3. **保留期限**：GA4 的資料保留設定要設成實際需要的期間並定期複查；後端的「分析 ID ↔ 真實客戶」對應表也要有刪除排程，不要無限期留著
-4. **權限控管**：誰能看 GA4、誰能匯出 BigQuery、誰能存取反查對應表，都要分別控管並留紀錄。**能拿到對應表的人，看到的等於直接識別資訊**
+**Use of a pseudonymous identifier needs all four preconditions** (skipping any one is "we hashed it" used as an excuse, not a real safeguard):
 
-**特種個資（第 6 條：病歷、醫療、基因、性生活、健康檢查、犯罪前科）另有更嚴格的規定**，不要用「反正只送假名 ID」繞過去——事件名稱本身（例如 `booked_hiv_test`）就可能揭露特種個資，即使識別碼是假名的。受規管產業的追蹤計畫要單獨過一次這關。
+1. **Legal basis and defined purpose** — can name which legal basis applies and what purpose was disclosed at collection; using it for something beyond that purpose needs a separate basis
+2. **Minimization** — use the coarsest grain that still answers the decision (`user_type` over `user_id` when it's enough); before sending an identifier, ask "what decision becomes impossible without it"
+3. **Retention limit** — set GA4's data-retention setting to the actual need and review it periodically; the backend's "ID ↔ real customer" mapping table needs its own deletion schedule too
+4. **Access control** — who can view GA4, who can export to BigQuery, who can reach the mapping table, each separately controlled and logged. **Whoever can reach the mapping table is seeing the equivalent of a direct identifier**
 
-## 實作流程（條件式強制，不是單純建議）
+## Hashing is not anonymization
 
-個資法對個人資料的定義（第 2 條）包含「其他得以直接或間接方式識別該個人之資料」，範圍不是幾個固定欄位名稱能窮盡的——**要先盤點資料再判斷**。
+The most commonly misused pair of terms. Keep event properties free of PII (email, phone, name, full order number), linking instead through an internal **pseudonymized** ID. Say "pseudonymized," never "anonymized": if your own backend holds an "analytics ID ↔ real customer" mapping and can reverse it, that ID is pseudonymized, and under most privacy law still counts as "indirectly identifiable" personal data.
 
-### 第一步：資料盤點（不能省略）
+**"We hashed it, so it's anonymized" is wrong.** Whether a hash is reversible and whether the record can identify a specific person are two different questions. Fields like email, phone, and national ID have a **small, fixed-format value space** — anyone with the hash can hash a known list themselves and match it (dictionary/rainbow-table attack), or join the same hash value across other datasets. A salt only raises the attack cost; as long as you (or anyone) still hold the salt and the enumerable source values, reversal back to a specific person is still possible.
 
-逐一檢視追蹤計畫裡的每個屬性／識別碼，問：「這個欄位，單獨或跟其他欄位組合起來，能不能識別出特定一個人？」
+**What actually determines anonymization is a re-identification risk assessment, not which technique was used** — the question is: can anyone (including you, a data recipient, or a third party with access to other public datasets), using reasonably available methods and cost, link this record back to a specific person? Genuine anonymization comes from reducing the data's own identifiability:
 
-- **直接識別資訊（不得進分析工具，見上節對照表）**：email、電話、姓名、身分證字號、地址、信用卡號、可反查特定人的完整訂單編號，**以及以上任何一項的雜湊值**；還有實際上等於帳號的 `account_id`／會員編號／可枚舉的連號 ID
-- **opaque 假名識別碼（是個資，但可在四個前提下使用）**：GA4 `client_id`、隨機 UUID 的 `transaction_id`、後端隨機產生的內部 `user_id`、行動裝置廣告識別碼、`gclid`／`fbclid` 這類跨站識別碼
-- **要看情境才能判斷的**：來源網址（若網址帶有可識別個人的參數）、事件名稱本身是否揭露特種個資、事件資料裡的自訂屬性組合（例如「地區＋出生年＋性別＋職業」，單獨欄位不算個資但組合起來可能識別到極小群體）
-- **盤點結果要記錄**：哪些欄位、判斷為個資或非個資、判斷理由——這份紀錄本身也是個資法要求「留存處理依據」的一部分
+- **Aggregation** — output only group-level statistics, never a person-level row
+- **Generalization** — coarsen precise values (birthdate → birth year; full address → city; exact timestamp → date)
+- **Suppression** — drop small-cell combinations outright, so no group-of-one gets exposed
+- **Joint evaluation of quasi-identifiers** — region + age + gender + occupation can each look harmless alone and still point to one person combined
 
-### 第二步：確認第 19 條的蒐集合法基礎
+Anything not put through this treatment — reversible, or not reversible but still enumerable/linkable back to a person — stays classified as **pseudonymized personal data**, still governed by privacy law. Don't tell a client "we hashed it, so it's not personal data."
 
-依第 19 條，非公務機關蒐集個資需具備特定目的並符合列舉條件之一。分析追蹤通常依附在「提供服務」這個特定目的下站得住腳，但要能講清楚是哪個目的、哪一款基礎，不是不假思索就說「反正是台灣訪客不用管」。
+## Special-category data
 
-### 第二步之二：確認第 20 條的「利用」合法性——這是獨立的一關
+Health records, medical/genetic data, sexual orientation, criminal history and similar categories carry stricter rules in most jurisdictions than ordinary personal data — "we're only sending a pseudonymous ID" doesn't route around this. An event name alone can disclose special-category data (`booked_hiv_test`), even with a pseudonymous identifier. A tracking plan for a regulated industry needs its own separate pass through this — see the GEO module for jurisdiction-specific categories and rules.
 
-**第 19 條只回答「當初能不能蒐集這些資料」，不回答「現在能不能拿去做這個用途」。** 第 20 條第 1 項要求非公務機關對個資的利用**應於蒐集之特定目的必要範圍內**，超出範圍要另有法定事由。同一份追蹤資料，不同用途各自要過關：
+## Data inventory: the process (jurisdiction-agnostic; legal citations live in the GEO module)
 
-| 利用目的 | 通常落在原本「提供服務／分析」的特定目的內嗎 | 要另外做什麼 |
-|---|---|---|
-| **純內部分析**（看流量、看漏斗、看轉換率，資料不外流） | 通常可以（前提是隱私權政策的蒐集目的有寫到分析） | 依第 8 條告知義務揭露即可 |
-| **廣告串接／轉換回傳**（把轉換事件回傳 Google Ads／Meta／LINE，含 Enhanced Conversions、CAPI） | **通常不在**——這是把資料提供給第三方廣告平台做成效比對，跟「分析自己網站」是不同的目的，而且涉及國際傳輸 | 告知內容要明確涵蓋「提供給第三方廣告平台」與傳輸至境外；沒涵蓋要另取同意 |
-| **廣告個人化／再行銷**（用網站行為建立受眾包、對特定行為的人投廣告、Customer Match 名單比對） | **通常不在**——這是對個人做輪廓化並據以行銷，屬明顯超出「提供服務」的新目的 | 要另取同意或找到其他法定事由；並落實第 20 條第 2、3 項：**首次行銷利用時提供免付費的拒絕方式，當事人拒絕後應立即停止利用** |
+Every jurisdiction's definition of personal data is broad enough that a fixed list of field names can't exhaust it — inventory the data first, then judge.
 
-**「拒絕行銷」要落實成技術措施，不是留在客服信箱裡**：至少要有 ①一個使用者找得到、按得下去的退出入口 ②按下去之後**真的會停止**——停止把該使用者的事件回傳廣告平台、把該使用者從既有受眾包／Customer Match 名單移除（維護一份 suppression list 並在每次上傳前套用）③這個狀態要持久化，不是清 cookie 就復原。**做不到②的退出按鈕比沒有更糟**，那是對當事人的不實陳述。
+### Step 1: data inventory (don't skip this)
 
-**實務判準**：問「我現在要做的這件事，寫在隱私權政策的蒐集目的裡了嗎？一個一般使用者讀完那段文字，會不會預期到我在做這件事？」答案是否的話，就是新目的。
+Go through every property/identifier in the tracking plan and ask: "does this field, alone or combined with others, identify a specific person?"
 
-### 第三步：履行第 8 條告知義務
+- **Direct identifier (never enters an analytics tool — see the table above)**: email, phone, name, national ID, address, credit card, a reverse-identifiable order number, plus any hash of these; also anything functionally equivalent to an account (an `account_id`, member number, or enumerable sequential ID)
+- **Opaque pseudonymous identifier (personal data, usable under the four preconditions above)**: GA4 `client_id`, a random-UUID `transaction_id`, a backend-random internal `user_id`, a mobile ad ID, cross-site identifiers like `gclid`/`fbclid`
+- **Needs context to judge**: a source URL (if it carries an identifying parameter), whether an event name itself discloses special-category data, a combination of custom properties (e.g. "region + birth year + gender + occupation" — no single field is personal data, but the combination might pin down a very small group)
+- **Record the outcome**: which field, personal-data or not, and why — this record is itself part of most jurisdictions' "keep a record of processing basis" requirement
 
-網站要有隱私權政策頁面，說明蒐集機構名稱、蒐集目的、個資類別、利用期間地區對象方式、當事人依法得行使的權利及方式、拒絕提供的影響，並揭露使用 GA4／GTM 等分析工具、資料可能傳輸至境外伺服器（GA4 資料會傳輸到 Google 位於美國的伺服器）。
+### Step 2: collection legal basis and use legal basis are two separate gates
 
-**GA4 隱私權政策的強制性不是只由 PDPA 盤點結果決定**：即使盤點下來在 PDPA 底下不構成強制告知，**Google Analytics 的服務條款本身仍要求網站經營者揭露有使用 GA4／Cookie，並在法律要求的情境下取得同意**——這是你跟 Google 之間的契約義務，獨立於 PDPA，兩者要分開判斷。
+Most privacy regimes split "was collecting this data ever lawful" from "is this particular use of it lawful" into two independent questions — clearing the first doesn't clear the second. Different uses of the same tracking data (internal analytics only; feeding conversions back to an ad platform; audience-building and remarketing) typically need to be checked separately, since a use that goes beyond the originally-disclosed purpose needs its own separate basis. See the GEO module for which specific legal bases and articles apply.
 
-## 多法域可疊加，不是「訪客在哪就適用哪一個」的互斥選擇
+**A practical test that travels across jurisdictions**: "does what I'm about to do fall inside the collection purpose stated in the privacy policy? Would an ordinary user reading that text expect me to be doing this?" A "no" means it's a new purpose needing its own basis, regardless of which specific law governs it.
 
-同一個網站完全可能同時受多個法域規範，要分開判斷是否個別觸發：
+### Step 3: notice obligation
 
-- **GDPR 域外適用不是「網站出現歐盟訪客」就自動成立，但也不是只看「有沒有鎖定歐盟市場」——第 3(2) 條有兩個各自獨立的分支，任一成立就適用：**
-  - **分支①：提供商品或服務給歐盟境內人士（鎖定市場）**——提供歐盟語言版本、以歐元計價、寄送到歐盟地區、針對歐盟受眾投放廣告等
-  - **分支②：監控歐盟境內人士的行為**——對歐盟訪客做行為追蹤、輪廓分析、跨站再行銷。**做分析追蹤的人特別要注意這一條**：網站完全沒在賣東西給歐盟、也沒鎖定歐盟市場，但只要對歐盟訪客部署了行為追蹤（例如未依訪客所在地分流的再行銷 pixel、跨站行為輪廓工具），就可能**單獨因為分支②**而落入 GDPR，不需要分支①成立
-  - 單純網站鎖定台灣市場、偶爾有歐盟訪客路過、且沒有對這些訪客做行為監控，未必觸發域外適用；但只要任一分支成立（即使只是部分商品線做歐盟行銷、或只是部分頁面掛了再行銷追蹤），就要另外評估
-- **CCPA／CPRA 的適用門檻是企業規模與資料量體**（年營收、處理的加州消費者資料筆數等門檻），不是「有加州訪客就適用」
-- **沒有完成資料盤點與市場範圍評估前，不要跟使用者說「不需要同意機制」**——這個結論的前提是盤點過、確認沒有超出必要範圍的個資蒐集、也確認沒有觸發其他法域的域外適用。判斷沒做完，先如實告知「這部分還沒判斷完，不能保證免同意」
+The site needs a privacy policy stating who's collecting, what for, what categories of data, how long and where it's used, the user's rights, and the consequence of refusing — and it needs to disclose the use of analytics tools (GA4/GTM) and that data may transfer to a foreign server (GA4 data is processed on Google's US infrastructure). See the GEO module for the specific statutory notice requirements that apply.
 
-## 其他
+**A GA4 privacy-policy disclosure obligation isn't only a function of local-law inventory results.** Even when local law doesn't mandate notice for a given field, **Google Analytics' own terms of service independently require disclosing GA4/cookie use and obtaining consent where the law requires it** — a contractual obligation to Google, separate from whatever the local privacy-law inventory concludes, and it has to be checked on its own.
 
-- 屬性欄位不要帶入姓名、身分證字號、完整電話等可識別個資
-- 客戶產業對個資特別敏感（金融、醫療）時，另外確認客戶端法務對追蹤範圍與後續修法動態的要求
-- 資料保留期限依實際需求設定，不要無限期保留使用者層級的個資
+### Consent-to-refuse mechanism: has to be a real technical control, not a mailbox
+
+Wherever a jurisdiction requires an opt-out from marketing use, it has to be implemented as an actual mechanism, not left to a support inbox: ① a findable, clickable opt-out entry point ② pressing it **actually stops use** — stops sending that user's events to ad platforms, removes them from any existing audience/customer-match list (a suppression list applied before every upload) ③ this state persists — clearing cookies doesn't undo it. **An opt-out button that fails ② is worse than no button** — it's a false representation to the user.
+
+## Multi-jurisdiction: obligations can stack, they don't switch based on visitor location
+
+A single site can be subject to more than one jurisdiction's privacy regime simultaneously — each is triggered independently, not selected by "where most visitors are." A regime with extraterritorial reach (monitoring a foreign jurisdiction's residents' behavior, not just selling to them) can apply even to a site that never targeted that market. **Don't tell a user "no consent mechanism needed" before the data inventory and market-scope review are actually done** — that conclusion depends on having confirmed no out-of-necessity personal-data collection and no other jurisdiction's extraterritorial reach triggered; if the review isn't finished, say so plainly rather than promising a conclusion you haven't earned.
+
+This pack ships legal specifics only for the GEO modules it currently has (`profile.md`'s `geo` field names which ones — see `references/geo/<code>.md`). A market listed in `geo` with no shipped module isn't silently skipped: say so, and look up that jurisdiction's current official regime rather than guessing or reusing another market's rules.
+
+## Other
+
+- Never populate a property field with name, national ID, or full phone number.
+- A client in a specially sensitive industry (finance, healthcare) needs their own legal counsel's sign-off on tracking scope and ongoing regulatory changes.
+- Set retention periods to actual need — never retain user-level personal data indefinitely.

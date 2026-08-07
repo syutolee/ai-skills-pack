@@ -1,120 +1,121 @@
-# 網址參數的個資外洩風險與防護
+# URL parameters: PII leak risk and protection
 
-主檔 `SKILL.md` 紅線 1 的展開。**開啟 Enhanced Measurement 前必讀。**
+Expands `SKILL.md` hard limit 1. **Read before turning on Enhanced Measurement.**
 
-## 為什麼「屬性裡不放個資」這條規則不夠
+## Why "don't put PII in properties" isn't enough
 
-「事件屬性不放個資」只管你**自己手動設定**的屬性；但 GA4 **每一個事件都會自動帶上 `page_location`（完整網址，含 path 與 query string）與 `page_referrer`（來源網址）**，這是基礎 Google tag 的行為，**跟增強型評估開不開無關**（增強型評估另外負責捲動、站內搜尋 `search_term` 等額外自動事件，詳見下節管道 1）。這是平台自動行為，不會幫你過濾網址裡的敏感內容。如果網站的網址結構把個資放進網址，這些個資會在你完全沒手動設定任何屬性的情況下自動流進 GA4：
+"Don't put PII in properties" only covers what you **manually** set. But GA4 **automatically attaches `page_location` (the full URL, including path and query string) and `page_referrer` (the referring URL) to every event** — this is the base Google tag's behavior, **independent of whether Enhanced Measurement is on** (Enhanced Measurement separately adds scroll, on-site search `search_term`, and other auto-events — see leak channel 1, below). This is platform-automatic behavior; it doesn't filter sensitive URL content for you. If a site's URL structure puts PII in the URL, it flows into GA4 automatically with zero manually-configured properties involved:
 
-- 忘記密碼流程：`/reset-password?token=abc123&email=user@example.com` → email 與重設密碼 token 直接進 GA4
-- 結帳成功頁：`/checkout/confirm?order_id=12345&email=...` → email 進 GA4
-- 站內搜尋（增強型評估的 `view_search_results` 會自動蒐集搜尋字詞）：使用者搜尋自己的姓名、電話、會員編號時，這些字詞會被當成 `search_term` 送進 GA4
+- Password reset flow: `/reset-password?token=abc123&email=user@example.com` → email and reset token go straight into GA4
+- Checkout confirmation: `/checkout/confirm?order_id=12345&email=...` → email goes into GA4
+- On-site search (Enhanced Measurement's `view_search_results` auto-collects the search term): a user searching their own name, phone number, or member ID gets that string captured as `search_term`
 
-**硬性規則：個資（email、電話、姓名、任何驗證用 token）不得出現在網址的任何部分——query string 不行，path 不行，fragment（`#` 之後）也不行。** 「把個資從 query 改放到 URL path」不是解法：`page_location` 蒐集的是完整網址，path 跟 query string 一樣會被蒐集，這樣做只是換個地方外洩。
+**Hard rule: PII (email, phone, name, any verification token) must not appear in any part of the URL — not query, not path, not fragment (after `#`).** "Move PII from the query string to the URL path" isn't a fix: `page_location` collects the whole URL, so path leaks exactly the same way query does — that just relocates the leak.
 
-**三個部分各自的行為不一樣，防護做法也不一樣，不要只想著 query**：
+**The three URL segments behave differently, and need different protection — don't only think about query:**
 
-| 網址部分 | 進得了 GA4 payload 嗎 | 進得了伺服器／CDN／WAF 日誌嗎 | 常見誤解 |
+| Segment | Reaches the GA4 payload? | Reaches server/CDN/WAF logs? | Common misconception |
 |---|---|---|---|
-| **query**（`?a=b`） | 會（`dl` 欄位完整帶） | 會 | 以為 GTM 白名單清乾淨就沒事——那只清了 GA4 這一條管道 |
-| **path**（`/reset/user@example.com`） | 會（同上） | 會 | 以為「不是參數所以不算」；而且**參數級白名單邏輯完全清不到 path**，是最常見的實作漏洞 |
-| **fragment**（`#token=abc`） | **會**——`page_location` 帶的是 `location.href`，fragment 包含在內 | **不會**（瀏覽器不送 fragment 給伺服器） | 以為「fragment 不上傳所以安全」——對伺服器日誌成立，**對 GA4 與頁面上的腳本完全不成立**，`location.hash` 任何腳本都讀得到 |
+| **query** (`?a=b`) | Yes (the `dl` field carries it whole) | Yes | Assuming a clean GTM allowlist is enough — that only closes this one channel |
+| **path** (`/reset/user@example.com`) | Yes (same as above) | Yes | Assuming "it's not a parameter so it doesn't count"; **parameter-level allowlisting doesn't reach path at all** — the most common implementation gap |
+| **fragment** (`#token=abc`) | **Yes** — `page_location` reads `location.href`, which includes the fragment | **No** (browsers never send the fragment to the server) | Assuming "fragments aren't uploaded so they're safe" — true for server logs, **completely false for GA4 and any script on the page**; `location.hash` is readable by any script |
 
-所以清理邏輯**必須三處都處理**：不能只做 query 的參數白名單，還要檢查 path 片段、並把 fragment 一併排除在送進 GA4 的值之外。
+So the cleanup logic **must cover all three**: not just a query allowlist — check path segments too, and exclude the fragment from whatever gets sent to GA4.
 
-## 四條各自獨立的外洩管道（不要混為一談，每條的風險程度與解法都不同）
+## Four independent leak channels (don't conflate them — each has a different risk level and fix)
 
-1. **GA4 payload**：`page_location`／`page_referrer` 會被送進 GA4 的事件資料。**這條管道不是「關掉增強型評估就沒了」——這是最常見的誤解**：`page_location` 是基礎 Google tag（gtag `config`／GTM 的 GA4 設定代碼）在送出第一個自動 `page_view` 時就會帶上的參數，**只要標籤有載入就會送**，跟增強型評估開不開無關。增強型評估管的是額外的自動事件（捲動、站外連結點擊、站內搜尋 `view_search_results`、檔案下載、影片互動等），關掉它只會少掉這些額外事件（以及 `search_term` 這種特定欄位），**基礎 `page_view` 與其 `page_location` 照送**。因此在這條管道上，真正有效的只有兩件事：①敏感頁面的網址**在標籤載入之前**就不含敏感內容（做法 1）②在標籤送出第一個 hit 之前就把 `page_location` 覆寫乾淨（做法 4；順序是關鍵）。而且這兩件事都管不到下面三條管道
-2. **同源（same-origin）Referer**：使用者在同一個網站內點擊連結、或頁面載入同網域的資源時，瀏覽器預設會把「目前完整網址」（含 path 與 query string）當成 Referer 傳過去——這條管道**不受**現代瀏覽器的預設 Referrer-Policy 限制
-3. **跨源（cross-origin）Referer**：載入第三方資源（廣告像素、字體、外部腳本）、或使用者從這頁點到別的網站時，**現代瀏覽器目前的預設 Referrer-Policy（`strict-origin-when-cross-origin`）只會傳網域本身，不會傳完整路徑與 query string**——這跟第 2 點不一樣，不要以為兩種情況都會外洩完整網址；但如果網站自己設了更寬鬆的 Referrer-Policy（例如 `unsafe-url`），或使用者瀏覽器版本較舊，跨源請求仍可能送出完整網址
-4. **頁面上的腳本直接讀取 `location.href`／`document.referrer`**：這是 JavaScript API 層級的存取，不透過瀏覽器的 Referer 標頭機制，**完全不受 Referrer-Policy 影響**——任何在頁面上執行的腳本（不論第一方或第三方）都能直接讀到目前網址。這是四條管道裡唯一「連 Referrer-Policy 都防不了」的一條，只能靠「不在敏感頁面載入非必要腳本」處理
+1. **GA4 payload**: `page_location`/`page_referrer` ride on every event GA4 collects. **This channel isn't closed by turning off Enhanced Measurement — that's the most common misunderstanding**: `page_location` is sent by the base Google tag (gtag `config` or GTM's GA4 config tag) on its first automatic `page_view`, **firing whenever the tag loads at all**, independent of Enhanced Measurement. Enhanced Measurement only adds extra auto-events (scroll, outbound clicks, on-site search `view_search_results`, file downloads, video engagement) — turning it off loses those extra events (and fields like `search_term`), **but the base `page_view` and its `page_location` still fire**. So on this channel, only two things actually work: ① a sensitive page's URL contains nothing sensitive **before the tag loads** (protection layer 1) ② `page_location` is overwritten clean **before the first hit fires** (protection layer 4; sequencing is everything). Neither of these reaches the other three channels below
+2. **Same-origin Referer**: clicking a link within the same site, or loading a same-domain resource, has the browser send "the current full URL" (path and query included) as Referer by default — **not restricted** by modern browsers' default Referrer-Policy
+3. **Cross-origin Referer**: loading a third-party resource (ad pixel, font, external script), or navigating away to another site, is where **modern browsers' current default Referrer-Policy (`strict-origin-when-cross-origin`) sends only the domain**, not the full path and query — different from point 2, don't assume both cases leak the full URL the same way; but a looser policy (`unsafe-url`) or an older browser can still send the full URL cross-origin
+4. **A script directly reading `location.href`/`document.referrer`**: this is JavaScript-API-level access, not the browser's Referer header mechanism, so it's **entirely unaffected by Referrer-Policy** — any script running on the page (first- or third-party) can read the current URL directly. This is the one channel Referrer-Policy can't touch at all; the only fix is not loading non-essential scripts on sensitive pages
 
-關掉增強型評估連第 1 條管道都沒有真正解決，更管不到第 2-4 條；網址裡的個資照樣會被伺服器存取日誌記下來。
+Turning off Enhanced Measurement doesn't even fully close channel 1, let alone 2–4; URL-borne PII still gets recorded in server access logs regardless.
 
-## 防護做法（依防漏程度排序，不是三選一）
+## Protection layers (ranked by how much they actually close, not a pick-one menu)
 
-### 1. 架構層級（唯一能真正防止外洩的做法，其他都只是局部補救）
+### 1. Architecture level (the only layer that actually prevents the leak; everything else is a partial patch)
 
-網址裡完全不放 email、電話、姓名、或能直接反查特定人的完整訂單編號。重設密碼用**隨機產生、與 email 無關聯、伺服器端記錄對應關係、短時效**的不透明 token（不是 email 的雜湊值——常見 email 格式可被字典攻擊反推，token 要跟 email 本身無任何可逆關聯）；需要在頁面上顯示 email 或訂單資訊時，由伺服器依 token 查出來後直接渲染進頁面內容，不要放進網址；表單提交優先用 POST 或伺服器端 session，不要用 GET 把敏感值攤在網址上。這一步要在**第一個 GA4 hit 送出之前**完成——網址本身從一開始就不該產生，不是「產生了敏感網址之後再想辦法清理」。
+Never put email, phone, name, or a reverse-identifiable full order number in a URL at all. Password reset uses a **randomly generated, email-unrelated, server-side-mapped, short-lived** opaque token (not a hash of the email — common email formats are dictionary-attackable, so the token must have no reversible relationship to the email at all); when a page needs to show an email or order info, the server looks it up by token and renders it directly into the page content, never into the URL. Form submission prefers POST or a server-side session over GET, which exposes sensitive values in the URL. This has to be done **before the first GA4 hit fires** — the sensitive URL should never come into existence in the first place, not "generate it and then try to clean it up."
 
-### 2. 敏感頁面不載入非必要的第三方腳本
+### 2. Don't load non-essential third-party scripts on sensitive pages
 
-這是防止「腳本直接讀取網址」的唯一有效做法，**Referrer-Policy 對這個管道完全沒有作用**。重設密碼頁、結帳成功頁這類短暫可能帶有敏感網址的頁面，只載入必要的第一方腳本，不要圖方便一次性載入全站共用的第三方腳本清單。
+The only effective countermeasure against "a script reads the URL directly" — **Referrer-Policy has no effect on this channel at all**. Password-reset and checkout-confirmation pages, which may briefly carry a sensitive URL, should load only necessary first-party scripts, not the site-wide third-party script bundle out of convenience.
 
-### 3. Referrer-Policy（範圍有限，只管瀏覽器自己發出的 Referer 標頭）
+### 3. Referrer-Policy (narrow scope — only governs the Referer header the browser itself emits)
 
-設定 `Referrer-Policy: no-referrer`（最嚴格）或 `strict-origin-when-cross-origin`（HTTP 標頭或 `<meta name="referrer">`）。**這個設定的實際範圍很窄**：`strict-origin-when-cross-origin` 對同源請求或導覽，預設仍會送出完整網址當 Referer，只有跨源才會縮減成只送網域；且不論哪種設定，都管不到做法 2 講的腳本直接讀取。要接近完全阻擋用 `no-referrer`，並理解這仍只解決 Referer 標頭這一個外洩面。
+Set `Referrer-Policy: no-referrer` (strictest) or `strict-origin-when-cross-origin` (HTTP header or `<meta name="referrer">`). **Its real scope is narrow**: `strict-origin-when-cross-origin` still sends the full URL as Referer by default for same-origin requests or navigation — only cross-origin traffic gets reduced to domain-only; and neither setting touches layer 2's direct script access. `no-referrer` gets closest to fully blocking it, and even then it only solves the Referer-header leak.
 
-### 4. GTM 層級覆寫 `page_location`／`page_referrer`
+### 4. GTM-level override of `page_location`/`page_referrer`
 
-**僅是 GA4 報表面的防禦，只能當粗篩，不能單獨依賴。** 在 GTM 建一個 Custom JavaScript 變數，只放行已知安全的行銷歸因參數白名單（`utm_source`、`utm_medium`、`utm_campaign`、`utm_content`、`utm_term`、`gclid`、`fbclid`）。
+**A report-layer defense only, never something to rely on alone.** Build a GTM Custom JavaScript variable that allows only a known-safe marketing-attribution parameter allowlist through (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `gclid`, `fbclid`).
 
-**只檢查參數名稱在白名單裡是不夠的**——`utm_content=user@example.com` 這種情況，參數名稱在白名單裡但值是一個 email。而**通用的「字元集／長度／有沒有 @ 符號／連續數字」規則本身也不可靠，兩個方向都會出錯**：
+**Checking only whether the parameter name is on the allowlist isn't enough** — `utm_content=user@example.com` has an allowlisted name but an email value. And a **generic character-set/length/"has an `@`"/"has consecutive digits" rule is unreliable in both directions**:
 
-- **會漏放（false negative）**：email 用 URL 編碼（`user%40example.com`）後字串裡沒有字面上的 `@`；電話號碼插入連字號（`0912-345-678`）躲過「連續 8 碼數字」規則；純英數的姓名（`JohnSmith`）完全符合「合法活動代碼」的字元集
-- **會誤殺（false positive）**：`gclid`、`fbclid` 這類平台核發的合法 click ID 本身就很長（gclid 常見 80-100+ 字元），套用長度規則會被誤判；`utm_term=running+shoes` 的 `+` 號若被字元集規則排除，合法值同樣被誤殺
+- **False negatives**: a URL-encoded email (`user%40example.com`) has no literal `@` in the string; a hyphenated phone number (`0912-345-678`) slips past an "8 consecutive digits" rule; an alphanumeric-only name (`JohnSmith`) fully satisfies "legal campaign-code character set"
+- **False positives**: legitimate platform-issued click IDs like `gclid`/`fbclid` are naturally long (`gclid` commonly runs 80–100+ characters) and get wrongly flagged by a length rule; `utm_term=running+shoes`'s `+` gets wrongly stripped by an overly strict character-set rule
 
-#### 參數名稱不是來源認證
+#### A parameter name is not source authentication
 
-**這一點必須講死，因為「這是平台核發的 click ID，來源可信」是個很容易犯的推論錯誤。** 網址完全由發出請求的人控制，任何人都能造訪 `https://你的網站/?gclid=user%40example.com` 或 `?fbclid=0912345678`，也可能有人把帶著這種參數的連結貼到論壇、社群或 email 裡讓別人點。實際到達你網站的 `gclid` 值**沒有任何來源可以驗證**——它不是簽章、不是 token、沒有任何回查機制能證明「這個值真的是 Google 發的」。所以 `gclid`／`fbclid` 的值一律要跟其他參數一樣檢查，不能因為參數名稱在白名單裡就整段放行。
+**This has to be stated flatly, because "it's a platform-issued click ID, so it's trustworthy" is an easy wrong inference.** A URL is entirely controlled by whoever sends the request — anyone can visit `https://your-site/?gclid=user%40example.com` or `?fbclid=0912345678`, or post a link carrying that parameter to a forum, a social post, or an email for someone else to click. **There's no way to verify a `gclid` value that actually reaches your site** — it isn't a signature, isn't a token, has no lookup mechanism proving "this value really was issued by Google." So `gclid`/`fbclid` values get checked exactly like every other parameter — an allowlisted name doesn't earn a pass through.
 
-#### 正確做法：先解碼再驗證，依據是「這個參數的值該長什麼形狀」
+#### The correct approach: decode first, then validate against what that parameter's value should look like
 
-- 對每個白名單參數，先做 URL 解碼（必要時再嘗試 base64 等常見編碼解碼），拿解碼後的實際值檢查；解碼後**含 `@`、含 email 形狀、含連續或分隔後可還原成 8-10 碼電話號碼形狀的值，一律丟棄**（不是移除該片段，是整個參數不放行）
-- `utm_source`／`utm_medium`／`utm_campaign`／`utm_content`／`utm_term` 這類**你自己設定的**行銷標籤，規則是**跟你自己維護的活動代碼登錄清單做精確比對（exact match）**——值**完全等於**清單裡某一筆才放行，不在清單裡的一律不放行（記錄下來待人工確認，不是自動通過）。這是這幾個參數唯一可靠的驗證方式，因為它們的合法值集合**是你自己決定的、有限的、可窮舉的**。前綴比對、正規表達式近似比對都不行（`spring_sale` 的規則會讓 `spring_sale_user@example.com` 過關）
-- `gclid`、`fbclid` 用**字元集白名單**驗證形狀，不是驗長度：這兩個平台核發的 click ID 實際上是 URL-safe 的不透明字串，只由 `A-Z a-z 0-9 _ -`（fbclid 另可能出現 `.`）組成。解碼後只要出現這個字元集以外的字元（`@`、空白、中文、`%`、`+` 等），就代表這個值不可能是平台核發的 click ID，直接丟棄——`gclid=user%40example.com` 在這條規則下必然被擋。**不要**對它們套用長度規則
+For every allowlisted parameter, first decode it (URL decode, then try common encodings like base64 if needed), then check the **decoded** value. This decode-then-scan judgment is the same one defined once in [`../../shared/references/input-hygiene.md`](../../shared/references/input-hygiene.md) — decode repeatedly until stable, then scan for PII shapes (names, phone numbers, email, national ID patterns). Two validation rules apply depending on the parameter:
 
-#### 字元集檢查只是語法檢查，不是 PII 檢查
+- **Marketing tags you define yourself** (`utm_source`/`utm_medium`/`utm_campaign`/`utm_content`/`utm_term`): validate by **exact match against your own maintained campaign-code registry** — a value passes only if it **exactly equals** an entry in that list; anything not on the list is held back for manual review, never auto-passed. This is the only reliable check for these parameters, because their legal value set is one **you** define, finite, and enumerable. Prefix matching or regex approximation doesn't work either (`spring_sale`'s rule would let `spring_sale_user@example.com` through)
+- **`gclid`/`fbclid`**: validate shape by **character-set allowlist**, not length — these platform-issued click IDs are URL-safe opaque strings using only `A-Z a-z 0-9 _ -` (`fbclid` may also include `.`). After decoding, any character outside that set (`@`, whitespace, CJK, `%`, `+`) means it can't possibly be a real platform-issued click ID — discard it outright. **Don't apply a length rule to these**
 
-這個區別要講死，不然會產生虛假的安全感：
+#### A character-set check is a syntax check, not a PII check
 
-- **`A-Za-z0-9_-` 這個字元集，本身就是 base64url 的完整字元集。** 把 email 做 base64url 編碼後塞進 `gclid`（`user@example.com` → `dXNlckBleGFtcGxlLmNvbQ`），**完全符合這條規則、必定通過檢查**。同理，純英數的姓名（`JohnSmith`、`chenyating`）、會員編號（`A123456789`）、身分證字號也都完全符合。字元集規則能擋掉的只有「編碼後仍留下違規字元」的那種笨拙外洩
-- 因此**絕對不能說「click ID 過了字元集檢查所以沒有 PII」**。這條規則的真正作用只有一個：擋掉最常見的低階誤用，它是**降低暴露面的粗篩，不構成防線**
-- **`gclid`／`fbclid` 通過檢查之後，仍然要當成「不受信任的假名化識別碼」對待**：①它的值由請求方完全控制，你無法驗證來源 ②它是可跨站關聯回特定裝置／個人的假名識別碼，適用 [privacy-compliance.md](privacy-compliance.md) 的全部規則——受個資法規範、要納入資料盤點、要設保留期限 ③不要拿它當使用者識別、不要用它 join 其他資料集
-- **真正能保證敏感頁面不外洩的做法只有一個：那些頁面在任何標籤載入之前就把整段 query string 拿掉**（見下方）。參數級白名單無論做得多細，都只是在管「非敏感頁面上的一般流量」
-- 沒有活動代碼登錄清單時，才退而用「解碼後的字元集白名單」當**粗略的第一層過濾**，並在交件文件裡明確記下「這一層必然有漏放，尚未建立活動代碼登錄清單」，不能宣稱「做了這層檢查就代表沒有 PII 外洩」
+This distinction has to be stated flatly, or it creates false confidence:
 
-移除不安全的參數後才組成乾淨網址，覆寫進 GA4 設定代碼的 `page_location`／`page_referrer`——**這只能阻止 GA4 自己的報表存到這個值**，網址本身在瀏覽器網址列、瀏覽紀錄、伺服器存取日誌、以及腳本讀取，都不會因為這個設定而改變。
+- **`A-Za-z0-9_-` is exactly base64url's full character set.** Base64url-encode an email and stuff it into `gclid` (`user@example.com` → `dXNlckBleGFtcGxlLmNvbQ`) and it **fully passes this rule**. Same for a plain alphanumeric name (`JohnSmith`, `chenyating`) or a member ID (`A123456789`). The character-set rule only catches "leaked despite naive encoding" — the clumsiest cases
+- So **"passed the character-set check" never means "no PII"** — this rule's real job is filtering out the most common low-effort mistakes; it's a **coarse first pass, not a defense line**
+- **A `gclid`/`fbclid` that passes the check is still treated as an "untrusted pseudonymous identifier"**: ① its value is fully controlled by whoever sends the request, unverifiable ② it's a cross-site-linkable pseudonymous identifier, so [privacy-compliance.md](privacy-compliance.md)'s full rule set applies — governed by privacy law, belongs in the data inventory, needs a retention limit ③ never use it as a user identifier or to join against another dataset
+- **The only approach that genuinely guarantees a sensitive page doesn't leak is stripping the entire query string before any tag loads** (below). A parameter allowlist, however carefully built, only ever manages "ordinary traffic on non-sensitive pages"
+- With no campaign-code registry available, fall back to "decoded character-set allowlist" as a **coarse first layer only**, and state explicitly in the delivery doc "this layer necessarily has false negatives, no campaign-code registry built yet" — never claim "this layer means no PII leaked"
 
-#### 對真正敏感的頁面：不要逐參數過濾，改送 canonical URL
+Assemble the clean URL after stripping unsafe parameters, then overwrite it into the GA4 config tag's `page_location`/`page_referrer` — **this only stops GA4's own reports from storing the value**; the URL itself in the browser address bar, browsing history, server access logs, and any script that reads it are all unaffected by this setting.
 
-重設密碼、結帳成功頁、站內搜尋結果頁這幾類頁面通常不需要行銷歸因追蹤，與其維護一套必然有漏洞的參數級白名單，不如**直接指定一個不含任何敏感資料的 canonical URL 送進 GA4**。
+#### For genuinely sensitive pages: don't filter parameter by parameter, send a canonical URL instead
 
-**canonical URL 的定義（三處都要處理，不是只清 query）**：由伺服器端針對這個頁面樣板決定的固定字串，例如 `/reset-password`、`/checkout/confirm`、`/search`——**path 用樣板路徑而非帶值的實際路徑**（`/orders/A12345` → `/orders/:id`）、**完全不含 query**、**完全不含 fragment**。它是「這是哪一類頁面」的標籤，不是使用者當下那一個實際網址。報表要區分商品或分類時，另外送已知安全的自訂參數（例如 `page_template: order_detail`），不要為了報表細度把值放回網址。
+Password reset, checkout confirmation, and on-site search-results pages usually don't need marketing attribution tracking at all — rather than maintaining a parameter allowlist that will inevitably have gaps, **send a single canonical URL with no sensitive data at all** into GA4 for these.
 
-做法依可靠度排序：
+**Canonical URL definition (all three parts, not just query)**: a fixed string decided server-side for this page template — `/reset-password`, `/checkout/confirm`, `/search` — **path is the template path, not the value-bearing actual path** (`/orders/A12345` → `/orders/:id`), **no query at all**, **no fragment at all**. It's a "which kind of page is this" label, not the user's actual current URL. When a report needs to distinguish product or category, send an already-known-safe custom parameter instead (e.g. `page_template: order_detail`) — don't put values back into the URL for report granularity.
 
-- **最可靠：伺服器端在這些頁面根本不輸出第三方標籤**（連 GTM／gtag 都不載入），沒有標籤就沒有 payload 可談
-- **次之：在頁面 `<head>` 裡、GTM／gtag 程式碼片段之前**，先用一段第一方 inline script 把**伺服器渲染好的 canonical URL** 寫進 dataLayer 或全域變數，GA4 設定代碼再讀這個值。**由伺服器渲染、不要在前端從 `location.href` 推導**——前端推導的邏輯只要漏掉 path 或 fragment 就前功盡棄。**順序是關鍵**——寫在標籤之後、或用 GTM 的自訂 HTML 代碼在頁面瀏覽觸發後才執行，第一個 `page_view` 早就帶著髒網址送出去了。**這種「看起來有做」的設定是最危險的一種，因為 DebugView 之後的事件看起來都乾淨**
-- **`page_referrer` 要一起覆寫**。使用者從 `/reset-password?token=...` 點到下一頁時，那一頁的 `dr` 就會帶著上一頁的完整髒網址——只覆寫 `page_location` 會漏掉這條
-- 一併用 `history.replaceState` 把瀏覽器網址列的 query **與 fragment** 清掉（減少後續事件、Referer、與使用者複製網址時的外洩面）；這仍不能取代上面兩點，因為第一個 hit 可能在它執行前就送出了
+Ranked by reliability:
 
-### 5. 停用有風險的自動事件
+- **Most reliable: the server doesn't emit any third-party tag on these pages at all** (not even GTM/gtag) — no tag, no payload to talk about
+- **Next: in the page `<head>`, before the GTM/gtag snippet**, a first-party inline script writes the **server-rendered canonical URL** into the dataLayer or a global variable, which the GA4 config tag then reads. **Render it server-side — don't derive it front-end from `location.href`**; a front-end derivation that misses path or fragment defeats the whole point. **Sequencing is everything** — write it after the tag, or via a GTM custom-HTML tag that fires after page view, and the first `page_view` has already gone out carrying the dirty URL. **This "looks handled" configuration is the most dangerous kind, because DebugView looks clean afterward**
+- **`page_referrer` must be overwritten too.** When a user clicks from `/reset-password?token=...` to the next page, that page's `dr` carries the previous page's full dirty URL — overwriting only `page_location` misses this
+- Also clear the browser address bar's query **and fragment** with `history.replaceState` (reduces exposure in later events, Referer, and if the user copies the URL); this still doesn't substitute for the two points above, since the first hit may fire before it runs
 
-如果站內搜尋欄位可能被輸入個資且無法簡單過濾，考慮在增強型評估設定裡關閉「網站搜尋」自動事件，改成手動埋點、只送已知安全的搜尋分類而非原始字詞——同樣只解決 GA4 這一個蒐集管道。
+### 5. Disable risky auto-events
 
-### 6. 邊緣與日誌層遮罩（瀏覽器端做什麼都救不回來的那一段）
+If an on-site search field might receive PII input and can't be simply filtered, consider turning off the "site search" auto-event in Enhanced Measurement settings, replacing it with manual instrumentation that sends only a known-safe search category, not the raw search term — this, too, only closes the GA4 collection channel.
 
-**前面 1-5 全部做完，仍然有一段外洩是既成事實**：只要瀏覽器對 `https://站台/reset-password?token=abc&email=user@example.com` 發出過請求，這個完整網址在請求抵達的當下就已經被 CDN、WAF、負載平衡器、應用伺服器的存取日誌記下來了。GTM 覆寫 `page_location` 發生在瀏覽器裡，**撤不回已經送出去的請求列**；`history.replaceState` 也只改網址列，不會回頭刪日誌。fragment 是唯一不會上傳伺服器的部分，但它照樣進 GA4 與頁面上的腳本。
+### 6. Edge and log-layer masking (the part nothing on the browser side can undo)
 
-所以要在邊緣與日誌層另外做一輪：
+**Even after 1–5 are all done, one slice of leakage is already a done deal**: the moment a browser sends any request to `https://site/reset-password?token=abc&email=user@example.com`, that full URL is already recorded in CDN, WAF, load-balancer, and application-server access logs. GTM's `page_location` override happens in the browser and **can't retract a request already sent**; `history.replaceState` only changes the address bar, it doesn't reach back and edit logs. The fragment is the only part that never reaches the server, but it still reaches GA4 and any script on the page.
 
-- **邊緣遮罩**：在 CDN／WAF／反向代理層設規則，寫入日誌前把敏感 query 參數的值替換成固定字串（`token=[REDACTED]`），並對已知的敏感 path 樣式（`/reset/<值>`、`/orders/<值>`）做路徑正規化後才記錄
-- **應用伺服器日誌**：同樣的遮罩要在 access log 格式與應用程式自己的 logger 兩邊都做——常見的漏洞是只改了其中一邊
-- **第三方日誌**：錯誤追蹤服務（Sentry 類）、Session 錄影工具、APM 各自會記一份完整網址，要逐一設定遮罩
-- **舊日誌**：遮罩規則上線之前產生的日誌仍含敏感網址，要納入資料盤點並排定刪除
-- **這一層是補救，不是替代品**。真正的解法仍然是做法 1（敏感值從一開始就不放進網址）——遮罩規則漏掉某個樣式時，你不會收到任何警告
+So there's a second pass needed at the edge and log layer:
 
-## 上線前驗證：走完整流程、檢查所有 payload，不是只看第一個
+- **Edge masking**: at the CDN/WAF/reverse-proxy layer, mask sensitive query-parameter values before writing to logs (`token=[REDACTED]`), and normalize known sensitive path patterns (`/reset/<value>`, `/orders/<value>`) before logging
+- **Application server logs**: the same masking needs to happen in both the access-log format and the application's own logger — a common gap is fixing only one of the two
+- **Third-party logs**: error trackers (Sentry-style), session-replay tools, and APM each keep their own copy of the full URL — mask each one individually
+- **Historical logs**: logs generated before the masking rule shipped still contain sensitive URLs — include them in the data inventory and schedule deletion
+- **This layer is a mitigation, not a substitute.** The real fix is still layer 1 (sensitive values never enter the URL to begin with) — a masking rule that misses a pattern gives no warning that it missed it
 
-用 **synthetic canary**：在測試環境的敏感網址裡塞入獨一無二、絕不會自然出現的標記值（例如 `email=canary-7f3a9b@example.invalid`、`token=CANARY7F3A9B`、搜尋框輸入 `canary7f3a9b`），走完一次完整流程（不是只載入首頁），然後**在所有蒐集點搜尋這個標記值**——出現在任何一處就算沒過。標記值獨一無二，才能用字串搜尋一次掃完，不必人工逐欄判讀。
+## Pre-launch verification: walk the full flow, check every payload, not just the first
 
-依序檢查：
+Use a **synthetic canary**: plant a unique value that would never occur naturally in a sensitive test-environment URL (`email=canary-7f3a9b@example.invalid`, `token=CANARY7F3A9B`, type `canary7f3a9b` into a search box), run the complete flow (not just the homepage), then **search every collection point for that marker** — a hit anywhere is a fail. A unique marker lets you search once across everything instead of manually inspecting every field.
 
-1. **整段流程的每一個 GA4 請求 payload（最重要的一項，不能省略）**：開啟開發者工具 Network 分頁 → 先勾選 **Preserve log**、清空紀錄 → 走完整個流程（載入敏感頁 → 捲動 → 點擊 → 跳到下一頁）→ 篩選 `collect`（瀏覽器端 GA4 標籤送出的請求，端點路徑含 **`/g/collect`**——這跟伺服器端 Measurement Protocol 用的 `/mp/collect` 是**兩個不同的端點**，篩錯路徑會找不到東西：瀏覽器發出的永遠是 `/g/collect`）→ **用瀏覽器的搜尋功能在整份 Network 紀錄裡搜 canary 標記值**，逐一檢查每一個請求，不是只看第一個、也不是只看 `dl`／`dr` 兩個欄位。要看的欄位至少包含 `dl`（document location）、`dr`（document referrer）、`ep.*`（自訂事件參數）、`sr`／`ul` 之外的所有自訂欄位。**第一個 hit 特別關鍵**（覆寫得太晚的典型症狀就是第一個髒、後續乾淨），但**後續 hit 也可能各自帶髒值**：捲動事件、站外連結點擊事件、下一頁的 `dr`，都是獨立的外洩點
-2. **GA4 DebugView** 的 `page_location`／`page_referrer`／`search_term`——當成輔助檢查，不是主證據
-3. **所有第三方請求**：Network 分頁篩選第三方網域，逐一確認沒有任何請求（含其 Referer 標頭）夾帶 canary 標記值
-4. **伺服器存取日誌、CDN／WAF 日誌、錯誤追蹤與 Session 錄影服務**：搜尋 canary 標記值，確認遮罩規則真的生效——**這一項是最常被跳過的，因為前面三項都在瀏覽器裡看得到，這一項要另外去後台撈**
-5. **path 與 fragment 的獨立案例**：除了 `?email=canary...`，另外跑一次把標記值放在 path（`/orders/CANARY7F3A9B`）與 fragment（`#token=CANARY7F3A9B`）的流程——參數級白名單邏輯對這兩處通常完全沒有作用，只測 query 會給出虛假的通過
+In order:
 
-任何一處出現 canary 標記值、或其他可識別個資就算沒過。
+1. **Every GA4 request payload across the whole flow (the most important item, never skip it)**: open DevTools' Network tab → check **Preserve log**, clear it → run the complete flow (load the sensitive page → scroll → click → move to the next page) → filter on `collect` (the browser-side GA4 tag's request path contains **`/g/collect`** — a **different endpoint** from the server-side Measurement Protocol's `/mp/collect`; filtering the wrong path finds nothing, since the browser always uses `/g/collect`) → **search the marker across the whole Network log**, checking every request, not just the first and not just `dl`/`dr`. Check at minimum `dl` (document location), `dr` (document referrer), `ep.*` (custom event parameters), and every other custom field beyond `sr`/`ul`. **The first hit matters most** (overwriting too late shows up as "first hit dirty, rest clean") but **later hits can each carry their own leak too**: scroll events, outbound-click events, the next page's `dr` are all independent leak points
+2. **GA4 DebugView**'s `page_location`/`page_referrer`/`search_term` — treat as a secondary check, not primary evidence
+3. **All third-party requests**: filter Network for third-party domains, confirm none (including their Referer header) carries the canary marker
+4. **Server access logs, CDN/WAF logs, error tracking and session-replay services**: search for the canary marker to confirm masking rules actually took effect — **this is the most commonly skipped step**, since the first three are all visible in-browser and this one needs a separate trip to a back-end console
+5. **Path and fragment as independent cases**: besides `?email=canary...`, run the flow again with the marker in the path (`/orders/CANARY7F3A9B`) and the fragment (`#token=CANARY7F3A9B`) — parameter-level allowlist logic usually does nothing for these two, and testing query alone gives a false pass
+
+A canary marker (or any other identifiable PII) turning up anywhere fails the check.
