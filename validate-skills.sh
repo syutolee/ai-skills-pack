@@ -10,8 +10,8 @@
 #   5. SKILL.md line count <= 500 (inherited from v1; AUTHORING sets no different number)
 #   6. Freshness marker format: a `last_verified:` line must hold YYYY-MM-DD and the
 #      immediately following line must be a non-empty `Source:` line (AUTHORING
-#      "Freshness markers"); EOF with a still-pending marker also flags. Severity split
-#      (Alpha ruling): empty/missing Source = ISSUE; Source present but with no
+#      "Freshness markers"); EOF with a still-pending marker also flags. Severity split:
+#      empty/missing Source = ISSUE; Source present but with no
 #      recognizable http(s):// URL in it = WARNING (human review, doesn't block ship);
 #      Source containing a URL = silent pass
 #   7. Relative markdown links (plain, `<...>`, or with a title) resolve to an existing
@@ -59,14 +59,13 @@ check_freshness_and_links() {
     # non-empty `Source:` line. The END block catches a `last_verified:` on the file's
     # last line, which would otherwise never see a "next line" to check (R1 must-fix).
     #
-    # Source-value severity (Alpha ruling, R3, after 3 rounds of the same disputed
-    # must-fix — campaign-analysis/references/stop-loss-thresholds.md:55 ships a real,
-    # intentional `Source:` line with no URL, "not an official platform policy, so there
-    # is no external URL to re-check against"; ads/references/geo/tw.md:120 similarly
-    # points back at an earlier citation instead of a URL): empty/missing Source = ISSUE
-    # (unchanged); Source present but no recognizable http(s):// URL substring anywhere
-    # in it = WARNING (flag for human review, don't block ship — carries Charlie's
-    # verifiability concern without false-positiving genuine non-URL provenance); Source
+    # Source-value severity: campaign-analysis/references/stop-loss-thresholds.md:55
+    # ships a real, intentional `Source:` line with no URL, "not an official platform
+    # policy, so there is no external URL to re-check against"; ads/references/geo/tw.md:120
+    # similarly points back at an earlier citation instead of a URL. So: empty/missing
+    # Source = ISSUE; Source present but no recognizable http(s):// URL substring anywhere
+    # in it = WARNING (flag for human review, don't block ship — catches unverifiable
+    # provenance without false-positiving genuine non-URL provenance); Source
     # containing a URL = silent pass, no report.
     # Field separator \x1f (unit separator) instead of ":" — a URL value itself contains
     # colons, which would break a naive ":"-delimited split.

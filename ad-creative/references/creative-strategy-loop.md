@@ -6,7 +6,7 @@ Mode 1 (from scratch) and Mode 2 (scaled static batch) answer "make me some ads.
 Signals → evidence-graded concepts → capacity roadmap (tiered, checked against capacity) → creative brief → handed to Mode 1/2 → monthly retro → back into the concept bank
 ```
 
-**Comparative performance judgment (which creative wins, what phase the account is in, funnel diagnosis) is not this file's job.** That's `campaign-analysis-pro`'s comparative-verdict layer (paid; free-tier `campaign-analysis` covers only absolute stop-loss and problem-routing — see its own scope boundary). Every step below that needs a performance verdict names it as an input from that skill; **without it installed, the field stays "pending" and this mode still runs** on the other two signal sources, per the free↔paid downgrade rule in [`../../contracts/sister-product-compat.md`](../../contracts/sister-product-compat.md) §6.
+**Comparative performance judgment (which creative wins, what phase the account is in, funnel diagnosis) is not this file's job.** That's `campaign-analysis`'s comparative-verdict layer (present only in the paid tier; the free tier's `campaign-analysis` covers only absolute stop-loss and problem-routing — see its own scope boundary). Every step below that needs a performance verdict names it as an input from that skill; **without it installed, the field stays "pending" and this mode still runs** on the other two signal sources, per the free↔paid downgrade rule in [`../../contracts/sister-product-compat.md`](../../contracts/sister-product-compat.md) §6.
 
 **This file's data-handling rules are the same set as [`grounded-inputs.md`](grounded-inputs.md), not a separate one**: anywhere below mentioning "customer language," "verbatim," or "source" follows that file's rules — only authorized, public/de-identified material; private DMs and customer-service transcripts stay excluded by default; without auditable authorization, only a rewritten insight ships, never a verbatim quote; a brief's "source" field is always the opaque triple `source_id/evidence_class/source_license` (e.g. `review-20260715-014/B/research_only`), never the original text.
 
@@ -18,7 +18,7 @@ Creative direction comes from combining three independent sources — reading on
 
 | Signal | What to gather | Where |
 |---|---|---|
-| **Account performance conclusions** | Win/loss verdicts by angle/hook/format, funnel diagnosis, fatigue calls, each with a **conclusion tier** (actionable / needs-more-signal) | **`campaign-analysis-pro`'s output** (paid) — it owns the analysis-unit, comparability, and sample-size gates this needs. **Without it, this field is "pending"**; prioritize using the other two signals instead |
+| **Account performance conclusions** | Win/loss verdicts by angle/hook/format, funnel diagnosis, fatigue calls, each with a **conclusion tier** (actionable / needs-more-signal) | **`campaign-analysis`'s comparative-verdict output** (paid tier) — it owns the analysis-unit, comparability, and sample-size gates this needs. **Without it, this field is "pending"**; prioritize using the other two signals instead |
 | **Customer/brand language** | Recurring pain-point/desire/objection phrasing, unexpected use cases, whether actual buyers match the target audience | The input library (`inputs/reviews/`, `inputs/comments/`) — public reviews and comments; region sources in [`geo/tw.md`](geo/tw.md). **Customer-service transcripts aren't a standing source** — private one-to-one content, include only with explicit consent for marketing use |
 | **External native content** | Hooks, formats, and language performing organically for this audience with no ad spend behind it; competitor ads running a long time (a plausible signal of effectiveness) | [`copy-and-visual-production.md`](copy-and-visual-production.md)'s observation accounts (region-specific, [`geo/tw.md`](geo/tw.md)); Meta/Google ad-library lookup tools |
 
@@ -45,16 +45,16 @@ Grade by the strongest evidence behind it:
 
 Evidence tier decides **priority** (how soon it lands in the roadmap); production spec (Step 4) is a separate call driven by validation strength, existing assets, capacity, and risk — even a tier-2 concept runs on a low-cost spec first, upgrading only after a conclusion comes back (mapping in Spec tiers, below).
 
-**Tier 1 requires `campaign-analysis-pro`'s determination** — "already converting" is a performance verdict, not a good-looking number on a report. Without that determination, don't self-promote a concept to tier 1; grade it 2-4 by whatever external evidence it actually has.
+**Tier 1 requires `campaign-analysis`'s comparative-verdict determination** — "already converting" is a performance verdict, not a good-looking number on a report. Without that determination, don't self-promote a concept to tier 1; grade it 2-4 by whatever external evidence it actually has.
 
 ---
 
-## Step 3: account phase (from `campaign-analysis-pro`, not judged here)
+## Step 3: account phase (from `campaign-analysis`'s comparative-verdict layer, not judged here)
 
-The right creative mix depends on whether the account is exploring or scaling — that determination needs the same analysis-unit/comparability/sample-size gates as tier-1 grading, so it's `campaign-analysis-pro`'s call, not this file's.
+The right creative mix depends on whether the account is exploring or scaling — that determination needs the same analysis-unit/comparability/sample-size gates as tier-1 grading, so it's that layer's call, not this file's.
 
-- **`campaign-analysis-pro` has a phase verdict** → apply its mix: **exploring** (no creative has cleared the winner bar yet) skews broad-and-shallow — mostly new concepts across segments/angles, only iterate on tier-1 or tier-2-with-actionable-conclusion work; **scaling** (one or more concepts have cleared the bar) skews deep-on-winners — visually distinct variations of the winning concept, a tonal remix, sub-segment probes, while still reserving a small explore slice (winners fatigue; the next winner is rarely a rehash of the current one).
-- **No verdict, but the user has performance data** → get the verdict from `campaign-analysis-pro` first, don't read the numbers yourself.
+- **That layer has a phase verdict** → apply its mix: **exploring** (no creative has cleared the winner bar yet) skews broad-and-shallow — mostly new concepts across segments/angles, only iterate on tier-1 or tier-2-with-actionable-conclusion work; **scaling** (one or more concepts have cleared the bar) skews deep-on-winners — visually distinct variations of the winning concept, a tonal remix, sub-segment probes, while still reserving a small explore slice (winners fatigue; the next winner is rarely a rehash of the current one).
+- **No verdict, but the user has performance data** → get the verdict from `campaign-analysis` first, don't read the numbers yourself.
 - **No verdict and no data (new account)** → default to the **exploring** mix, and disclose "defaulted to exploring — no performance data yet, not a performance determination."
 
 ---
@@ -77,7 +77,7 @@ Every concept on this month's schedule gets a **spec tier**:
 | **T2 — remix** | Days | Recombine existing assets or generation tools into something new | Concepts with a "needs-more-signal" conclusion |
 | **T3 — full production** | Weeks | New shoot, creator partnership, full production | **Only angles with an "actionable" conclusion** — see Spec tiers, below |
 
-**Promotion to T3 has one legal source, `campaign-analysis-pro`'s conclusion tier — this file offers no shortcut.** "The cheap version already showed a funnel signal" isn't grounds for T3; that's "needs-more-signal," T2 at most. Full mapping in Spec tiers.
+**Promotion to T3 has one legal source, `campaign-analysis`'s comparative-verdict conclusion tier — this file offers no shortcut.** "The cheap version already showed a funnel signal" isn't grounds for T3; that's "needs-more-signal," T2 at most. Full mapping in Spec tiers.
 
 **Capacity check — the rule that keeps the roadmap honest**: compute what the team (or the AI pipeline) can actually produce this month **without sacrificing quality**, and schedule to that number. Forcing an 8-concept capacity to cover a 20-concept schedule doesn't produce 20 ads — it produces 20 diluted ones and a burned-out team. Sort by evidence tier, cut to fit.
 
@@ -89,10 +89,10 @@ Turn the roadmap into a **brief per concept** (segment, motivation + source, ang
 
 The loop's last step and next cycle's first input. One document per month (`retros/YYYY-MM.md`).
 
-**This retro translates `campaign-analysis-pro`'s verdicts into next cycle's production plan — it doesn't re-run the performance judgment.** The first three sections below come entirely from that skill's conclusions; this file's job is the back half — turning verdicts into concept-level learning and next month's roadmap.
+**This retro translates `campaign-analysis`'s comparative verdicts into next cycle's production plan — it doesn't re-run the performance judgment.** The first three sections below come entirely from that skill's conclusions; this file's job is the back half — turning verdicts into concept-level learning and next month's roadmap.
 
 ```
-## Winners        — concept, and why it won per campaign-analysis-pro (which element drove it)
+## Winners        — concept, and why it won per campaign-analysis's comparative-verdict layer (which element drove it)
 ## Losers         — concept, which funnel stage it died at per that skill, the failed hypothesis
 ## Metric winners — flagged "needs-more-signal" (didn't clear the winner bar, but one metric showed a signal)
 ## What we learned — pattern-level notes → written back to the shelf as new/revised concepts
@@ -102,7 +102,7 @@ The loop's last step and next cycle's first input. One document per month (`retr
 
 Retro rules:
 
-- **No conclusion yet for the first three sections → leave them blank, tag "pending `campaign-analysis-pro`."** Don't judge from raw numbers yourself — this is the easiest place to break the rule, since a performance report sitting right there invites a quick eyeball sort.
+- **No conclusion yet for the first three sections → leave them blank, tag "pending campaign-analysis's comparative-verdict layer."** Don't judge from raw numbers yourself — this is the easiest place to break the rule, since a performance report sitting right there invites a quick eyeball sort.
 - **Judge concepts, not individual ads — this is this file's job**: that skill verdicts a single ad/asset; rolling several execution variants up into "does this concept work" is strategy work. But check its **comparability call** first — if it flags the variants as untested-under-comparable-conditions (different audience, placement, bid strategy, attribution window), don't roll them up into a concept-level verdict, log it as needs-more-signal instead. One failed execution doesn't mean "the execution was the problem" either.
 - **Read the funnel, not just the top-line metric** — this means **asking that skill for a stage-level diagnosis**, not reading funnel numbers yourself.
 - **Every learning needs a destination**: back to the shelf (new or revised), a re-graded evidence tier, or retired. A retro that changes nothing on the roadmap was a meeting, not a retro.
@@ -144,7 +144,7 @@ Produce horizontally (covering different segment × motivation combinations), no
 
 ### From a funnel diagnosis to what to fix
 
-**Diagnosing which funnel stage failed (thin 3-second view rate vs. weak hold vs. weak CTR vs. weak post-click conversion) is `campaign-analysis-pro`'s call, not a table to self-apply against raw numbers** — same analysis-unit and sample-size gates as everywhere else in this file. `campaign-analysis`'s free tier gives one coarse signal worth routing on without the paid layer: rising CPM with falling CTR at stable targeting names creative fatigue and routes here — useful for "something in creative may be tired," not for which specific element to fix.
+**Diagnosing which funnel stage failed (thin 3-second view rate vs. weak hold vs. weak CTR vs. weak post-click conversion) is `campaign-analysis`'s comparative-verdict call, not a table to self-apply against raw numbers** — same analysis-unit and sample-size gates as everywhere else in this file. `campaign-analysis`'s free tier gives one coarse signal worth routing on without the paid layer: rising CPM with falling CTR at stable targeting names creative fatigue and routes here — useful for "something in creative may be tired," not for which specific element to fix.
 
 Once a stage-level diagnosis is in hand: stopped → test a new visual open (and rule out placement/fatigue/audience mismatch); held → rewrite the 3-15s bridge, not the hook; clicked-but-didn't-convert → tighten the promise/CTA/proof, but also check bid strategy and attribution window before assuming it's the creative; check landing-page message match (`landing-page-cro`) only after ruling out traffic-quality causes.
 
@@ -154,7 +154,7 @@ A strong 3-second open doesn't guarantee a good ad — a misleading visual pulls
 
 Production cost should track evidence strength: test intuition cheap (static, text-overlay video, remixed existing assets, 1-2 days) to validate the angle cheaply, not to produce a polished ad; only a validated angle earns full-production investment (creator shoots, street interviews, live demos).
 
-**"Validated" has exactly one source: `campaign-analysis-pro`'s conclusion tier.**
+**"Validated" has exactly one source: `campaign-analysis`'s comparative-verdict conclusion tier.**
 
 | Conclusion | Spec tier it unlocks |
 |---|---|

@@ -1,6 +1,6 @@
 # Stop-loss thresholds
 
-Defensive-tier math only: break-even CPA/ROAS, how to read the marginal number's direction, and the absolute threshold that triggers a stop-loss recommendation. Comparative thresholds — the ≥10-conversion maintenance rule, TCPL, the quality×cost matrix, scale quadrants — live in the paid `campaign-analysis-pro` module; this file doesn't restate them.
+Absolute-threshold math only: break-even CPA/ROAS, how to read the marginal number's direction, and the absolute threshold that triggers a stop-loss recommendation. Comparative thresholds — the ≥10-conversion maintenance rule, TCPL, the quality×cost matrix, scale quadrants — live in `campaign-analysis`'s paid-tier comparative-judgment layer, not shipped in this free tier; this file doesn't restate them.
 
 ## Break-even CPA / ROAS
 

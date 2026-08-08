@@ -1,16 +1,16 @@
 ---
 name: campaign-analysis
-description: "Use when the user asks whether to keep spending, whether an ad is working, whether to pause or scale, or wants help reading campaign results — 'should I keep spending on this', 'is this ad working', 'pause or scale', 'reading campaign results', 'CPA looks high, what do I check' — or wants to verify an agency's report or audit a team's weekly numbers. Free tier: absolute stop-loss thresholds against target CPA/ROAS, the 'wait ≠ not working' distinction for thin data, a tracking-health-first check, and a problem-routing table for what's actually broken. Comparative verdicts — which creative wins, how much to scale, fatigue detection, the diagnostic funnel — need the paid `campaign-analysis-pro` module; this tier names the gap and routes there instead of guessing. Never executes an account mutation."
+description: "Use when the user asks whether to keep spending, whether an ad is working, whether to pause or scale, or wants help reading campaign results — 'should I keep spending on this', 'is this ad working', 'pause or scale', 'reading campaign results', 'CPA looks high, what do I check' — or wants to verify an agency's report or audit a team's weekly numbers. Free tier: absolute stop-loss thresholds against target CPA/ROAS, the 'wait ≠ not working' distinction for thin data, a tracking-health-first check, and a problem-routing table for what's actually broken. Comparative verdicts — which creative wins, how much to scale, fatigue detection, the diagnostic funnel — need this same skill's paid tier; this free tier names the gap and points at the upgrade instead of guessing. Never executes an account mutation."
 license: MIT
 metadata:
-  version: 1.0.0
-  origin: "v2 defensive-tier subset of ai-skills-pack v1's campaign-analysis-iteration (ticket 08); comparative judgment (full evidence gates, TCPL, scale quadrants, diagnostic funnel) split out to the paid campaign-analysis-pro module (ticket 09). v1 is itself a deep localization of coreyhaines31/marketingskills (MIT) — see v1's NOTICE.md for the source chain; this file adds no new upstream content, only formula and threshold text already present in v1."
+  version: 1.1.0
+  origin: "v2 defensive-tier subset of ai-skills-pack v1's campaign-analysis-iteration (ticket 08); comparative judgment (full evidence gates, TCPL, scale quadrants, diagnostic funnel) split out to a paid comparative-judgment layer of this same skill (ticket 09). v1 is itself a deep localization of coreyhaines31/marketingskills (MIT) — see v1's NOTICE.md for the source chain; this file adds no new upstream content, only formula and threshold text already present in v1."
   tier: free
 ---
 
 # Campaign analysis
 
-The question this tier answers: **is this burning money past the point where you should stop, or is it just early?** Nothing here judges which creative wins, how much to scale, or why performance changed — that's the paid module. This tier's whole job is loss prevention: catch the campaign that's clearly past its stop-loss threshold, and be honest when the data just isn't there yet to say more.
+The question this tier answers: **is this burning money past the point where you should stop, or is it just early?** Nothing here judges which creative wins, how much to scale, or why performance changed — that's this same skill's paid tier. This tier's whole job is loss prevention: catch the campaign that's clearly past its stop-loss threshold, and be honest when the data just isn't there yet to say more.
 
 ## Before you start
 
@@ -32,10 +32,7 @@ When conversion volume is too thin to compare this ad or creative against anythi
 
 ## Boundary: what this tier doesn't judge
 
-Comparative verdicts — which creative wins, how much to scale, fatigue detection, breakpoint diagnosis — belong to the paid module. Check whether `../campaign-analysis-pro/` exists:
-
-- **Present** → route the user there for the comparative question.
-- **Absent** → say so plainly: *"this tier stops at loss-prevention; a comparative verdict needs the pro module."* Then point at where the problem likely is, using the table below — a free user still gets to know what's wrong, just not a verdict on which creative to keep.
+Comparative verdicts — which creative wins, how much to scale, fatigue detection, breakpoint diagnosis — belong to this same skill's paid tier, not shipped here. Say so plainly: *"this tier stops at loss-prevention; a comparative verdict needs the paid tier."* Then point at where the problem likely is, using the table below — a free user still gets to know what's wrong, just not a verdict on which creative to keep.
 
 ## Problem routing
 
@@ -61,7 +58,7 @@ When the user drops a platform export, land it through the three layers in [`../
 ## Data source: three-tier degrade
 
 1. **Read-only ad-platform MCP tool available** → pull recent data with it, and land it into `.agents/data/` through the same raw/normalized/readouts layout above — an MCP pull isn't a shortcut around that split.
-2. **No MCP tool** → read `.agents/data/`. Check whether `../shared/references/mcp-setup/` exists: present → follow it to wire one up; absent → this tier doesn't ship a wiring guide, skip to the manual path below.
+2. **No MCP tool** → read `.agents/data/`. Follow `../shared/references/mcp-setup/` to wire one up — this reference ships in every tier; a stripped-down install missing it just means no wiring guide, skip to the manual path below.
 3. **Nothing in `.agents/data/` either** → ask the user to export from the platform's dashboard or paste a summary.
 
 **Read-only, no exceptions.** Even when a write-capable tool is available — budget changes, pausing an ad, audience edits — never call it. Every conclusion stays a recommendation the user acts on themselves, whether or not the calling agent has account-write tools wired up.
@@ -70,6 +67,8 @@ When the user drops a platform export, land it through the three layers in [`../
 
 State every conclusion as a recommendation — "recommend pausing this ad," "recommend revisiting Target CPA on [date]" — never execute it. This tier doesn't touch creative production or delivery settings either; it only judges spend against thresholds. What to do about a verdict routes to `ad-creative` or `ads`; this skill stops at the verdict.
 
+**This skill's own write posture doesn't change just because a narrower one exists elsewhere in this package.** `ads` and `ad-creative` may create a new, always-paused object through a write-capable MCP tool (see [`../shared/references/mcp-setup/index.md`](../shared/references/mcp-setup/index.md)'s policy) — this skill still never calls a write-capable tool for anything, full stop.
+
 ## Related skills
 
-**In this package:** `quick-angle` — the angle layer this tier names as out of scope but never diagnoses itself (Problem routing, above). `tracking-health` — run first, the data floor under every judgment here. `ads` — where a verdict's "what to do about it" routes when the fix is a delivery-settings change. `ad-creative` — creative fatigue routes here. `landing-page-cro` (paid) — click-no-conversion routes here for diagnosis. `campaign-analysis-pro` (paid) — comparative verdicts, not present in this tier.
+**In this package:** `quick-angle` — the angle layer this tier names as out of scope but never diagnoses itself (Problem routing, above). `tracking-health` — run first, the data floor under every judgment here. `ads` — where a verdict's "what to do about it" routes when the fix is a delivery-settings change. `ad-creative` — creative fatigue routes here. `landing-page-cro` (paid) — click-no-conversion routes here for diagnosis.

@@ -8,12 +8,12 @@ Every skill in this package traces to one of three tiers. A skill's own `SKILL.m
 
 ### Tier 1 — deep localization of `coreyhaines31/marketingskills` (MIT, Corey Haines), via this package's own v1
 
-[coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) is the ultimate upstream. This package doesn't adapt it directly — `ai-skills-pack` (v1, `bizdev/ai-skills-pack/`) did that work first, deeply localizing platform choices, case studies, and compliance content for Taiwan; each v1 skill's own `NOTICE.md` carries the locked upstream commit, pinned version, and file-level SHA-256 table. v2 rewrites v1's content into English, restructures skill boundaries, and splits free/paid tiers — see each skill's `metadata.origin` for exactly what changed — but the underlying authorship chain back to Corey Haines still runs through it for:
+[coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) is the ultimate upstream. This package doesn't adapt it directly — `ai-skills-pack` (v1) did that work first, deeply localizing platform choices, case studies, and compliance content for Taiwan; each v1 skill's own `NOTICE.md` carries the locked upstream commit, pinned version, and file-level SHA-256 table. v2 rewrites v1's content into English, restructures skill boundaries, and splits free/paid tiers — see each skill's `metadata.origin` for exactly what changed — but the underlying authorship chain back to Corey Haines still runs through it for:
 
 - `ads` (v2 rewrite of v1's `ads`, ticket 05)
 - `ad-creative` (v2 rewrite of v1's `ad-creative`, ticket 06)
 - `tracking-health` (v2 English rewrite and slim of v1's `tracking-health`, ticket 07)
-- `campaign-analysis` and `campaign-analysis-pro` (v2 split of v1's `campaign-analysis-iteration` into a free defensive subset, ticket 08, and a paid comparative-judgment module, ticket 09)
+- `campaign-analysis` (v2 split of v1's `campaign-analysis-iteration` into a free defensive subset, ticket 08, and a paid comparative-judgment module, ticket 09 — the two were merged back into one same-named skill in v2.3, see "v2.3: same-name merge," below)
 - `landing-page-cro` — **mixed**: v1's `landing-page-cro` was itself a new build (the upstream project's locked commit ships no CRO skill) **except** its "headline mirroring" section, adapted from upstream `ads/SKILL.md` and credited to Corey Haines in v1's own `NOTICE.md`. v2's rewrite (ticket 12) carries that same mixed status forward — see v2's `landing-page-cro/SKILL.md` `metadata.origin`.
 - `shared/references/platform-selection.md` (moved from v1's `ads/references/platform-selection.md`, content unchanged — that file was itself split out of upstream `ads/SKILL.md`, per v1's `ads/NOTICE.md`)
 - `tracking-architecture/references/event-library.md`'s recovered catalog (traces through v1's since-cut standalone `analytics` skill, itself a deep localization of upstream `marketingskills`' `analytics` v2.0.0)
@@ -33,10 +33,23 @@ Skills and references built for this package's v2 with no `marketingskills` or v
 - `kickoff` (new free-tier entry point, ticket 03)
 - `tracking-architecture` (new paid skill, ticket 10) — its design-vs-health framing, not-tracked reasoning, and platform-mapping structure are new; only its event catalog is Tier 1 (above)
 - `experiment-design` (new paid skill, ticket 11; no v1 predecessor — v1 pointed at a third-party `ab-testing` skill instead of shipping this)
-- `ad-creative-pro` (new paid rendering module, ticket 13) — productizes this business's own in-house banner-batch production pipeline (Playwright screenshot + Pillow pixel verification) and reuses its overflow-detection technique, adapted from `sns/carousel/render.py`'s clone-and-measure line-clamp check. No third-party upstream content; templates and scripts are original to this ticket.
-- `shared/references/mcp-setup/` (new paid-only reference, ticket 14) — the Meta/Google MCP setup guide; original content, cites each platform's own current official documentation inline (see each file's `last_verified`/`Source` markers)
+- `ad-creative`'s Rendering stage (new paid rendering module, ticket 13, originally shipped as the separate `ad-creative-pro` skill and merged into `ad-creative` in v2.3, see "v2.3: same-name merge," below) — productizes this business's own in-house banner-batch production pipeline (Playwright screenshot + Pillow pixel verification) and reuses its overflow-detection technique, adapted from `sns/carousel/render.py`'s clone-and-measure line-clamp check. No third-party upstream content; templates and scripts are original to this ticket.
+- `quick-angle`'s deep-grill mode (new paid module, ticket 17, originally shipped as the separate `kickoff-pro` skill and merged into `quick-angle` in v2.3, see "v2.3: same-name merge," below) — the multi-round interrogation method is modeled on the `grilling` skill's frontier approach (mechanism only, no text reused) and applied to `quick-angle`'s three base questions. No third-party upstream content.
+- `shared/references/mcp-setup/` (new reference, ticket 14; free-tier since ticket 21) — the Meta/Google MCP setup guide; original content, cites each platform's own current official documentation inline (see each file's `last_verified`/`Source` markers)
 - `contracts/profile-v1.md`, `contracts/kickoff-readout-v1.md`, `contracts/agents-dir-conventions.md`, and `contracts/sister-product-compat.md` §6 (new v2 contracts and additions)
 - `AUTHORING.md`, this `NOTICE.md`, `README.md`, `PACKAGING.md`, `validate-skills.sh`
+
+## v2.3: same-name merge (ticket 22)
+
+v2 shipped three paid capabilities as separate `-pro`-suffixed skill directories, installed alongside their free-tier counterpart: `kickoff-pro` (beside `quick-angle`), `ad-creative-pro` (beside `ad-creative`), `campaign-analysis-pro` (beside `campaign-analysis`). All three were always the same skill asked for more — never a separate document, schema, or production line — so the two-file split was tier packaging, not a design boundary. v2.3 merges each pair into one same-named skill: the paid capability is now a section inside the free skill's own `SKILL.md`, present in the paid distribution and absent from the free one, rather than a sibling directory a paid install adds on top.
+
+| Retired directory | Content now lives in |
+|---|---|
+| `kickoff-pro/` | `quick-angle/`'s "Deep-grill mode" section and `quick-angle/references/deep-grill-mechanics.md` |
+| `ad-creative-pro/` | `ad-creative/`'s "Rendering: turning a spec into a file" section, `ad-creative/scripts/`, `ad-creative/templates/` |
+| `campaign-analysis-pro/` | `campaign-analysis/`'s "Comparative judgment: the four-gate flow" section and `campaign-analysis/references/{evidence-gates,kill-keep-scale,diagnostic-funnel,iteration-report}.md` (`kill-keep-scale-pro.md` renamed `kill-keep-scale.md` in the move) |
+
+No content was dropped in the merge — see each merged `SKILL.md`'s own `metadata.origin` for the ticket-level detail. The free public distribution (`free-dist/`, GitHub) is unaffected: it never carried the `-pro` directories, and its copy of `quick-angle`/`ad-creative`/`campaign-analysis` keeps the same free-tier behavior it always had.
 
 ## Copyright
 

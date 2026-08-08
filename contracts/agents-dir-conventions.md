@@ -18,7 +18,7 @@ Layout and multi-client rules for everything this package's skills read and writ
 └── assets/                     # creative library — banner/GIF/copy prototypes and variants
     ├── source/                  # captured/downloaded source images. See contracts/asset-index-v1.md.
     ├── index.md                 # per-image catalog — schema asset-index/v1. See contracts/asset-index-v1.md.
-    ├── cutouts/                  # background-removed PNGs, one per source image that succeeded. See ad-creative-pro/scripts/cutout.py.
+    ├── cutouts/                  # background-removed PNGs, one per source image that succeeded. See ad-creative/scripts/cutout.py.
     └── brand-kit.md              # logo/palette/layout preferences — schema brand-kit/v1. See contracts/brand-kit-v1.md.
 ```
 
@@ -38,7 +38,7 @@ Not part of the `data/` triad — it's a per-image catalog over `assets/source/`
 
 ### `assets/cutouts/`
 
-Background-removed PNGs produced by `ad-creative-pro/scripts/cutout.py`, one per `assets/source/` image the script processed successfully — not an index-and-catalog file like `assets/index.md`, just an output directory a rendering skill checks before falling back to the flat original. No `rembg` installed, or the script hasn't run yet, means this directory is empty or absent — a normal state, not an error.
+Background-removed PNGs produced by `ad-creative/scripts/cutout.py`, one per `assets/source/` image the script processed successfully — not an index-and-catalog file like `assets/index.md`, just an output directory a rendering skill checks before falling back to the flat original. No `rembg` installed, or the script hasn't run yet, means this directory is empty or absent — a normal state, not an error.
 
 ### `assets/brand-kit.md`
 
@@ -50,7 +50,7 @@ Not part of the `data/` triad — it isn't derived from a `normalized/` export, 
 
 ### `data/experiments/`
 
-Also not part of the `data/` triad above — a test plan is written *before* a test runs, so it isn't derived from a `normalized/` export the way `readouts/` is. Written and read by `experiment-design`; see that skill's own `SKILL.md` for the plan's fields and filename convention. Once a test finishes, its results still land through the ordinary `raw/`/`normalized/`/`readouts/` path for `campaign-analysis-pro` to judge — `experiments/` holds the plan, never the outcome.
+Also not part of the `data/` triad above — a test plan is written *before* a test runs, so it isn't derived from a `normalized/` export the way `readouts/` is. Written and read by `experiment-design`; see that skill's own `SKILL.md` for the plan's fields and filename convention. Once a test finishes, its results still land through the ordinary `raw/`/`normalized/`/`readouts/` path for `campaign-analysis`'s comparative-judgment layer to judge — `experiments/` holds the plan, never the outcome.
 
 ## Three conventions
 
